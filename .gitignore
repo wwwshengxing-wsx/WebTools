@@ -1,0 +1,50 @@
+# Node dependencies
+node_modules/
+
+# Build output
+/dist/
+/dist-ssr/
+
+# Vite cache
+/.vite/
+vite.config.ts.timestamp-*
+
+# Testing
+/coverage/
+/.vitest/
+
+# Tooling caches
+.eslintcache
+.stylelintcache
+
+# Package manager stores
+.pnpm-store/
+.yarn/
+.yarnrc.yml
+.npm/
+.pnp.cjs
+.pnp.loader.mjs
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+
+# Miscellaneous
+*.swp
