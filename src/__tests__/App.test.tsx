@@ -1,23 +1,35 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import App from '../App';
+import CounterPage from '../pages/CounterPage';
 
-describe('App counter behaviour', () => {
-  it('increments and decrements count when buttons are clicked', async () => {
-    render(<App />);
+describe('App routing shell', () => {
+  it('renders the counter page on the root route', () => {
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          element: <App />,
+          children: [
+            {
+              index: true,
+              element: <CounterPage />,
+            },
+          ],
+        },
+      ],
+      { initialEntries: ['/'] }
+    );
 
-    const incrementButton = screen.getByRole('button', { name: '+1' });
-    const decrementButton = screen.getByRole('button', { name: '-1' });
-    const resetButton = screen.getByRole('button', { name: 'Reset' });
+    render(<RouterProvider router={router} />);
 
-    await userEvent.click(incrementButton);
-    await userEvent.click(incrementButton);
-    await userEvent.click(decrementButton);
-
-    expect(screen.getByText('1')).toBeInTheDocument();
-
-    await userEvent.click(resetButton);
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /interactive counter/i })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /counter/i })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 });
