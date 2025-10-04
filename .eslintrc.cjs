@@ -2,22 +2,46 @@ module.exports = {
   root: true,
   env: {
     browser: true,
-    es2021: true
+    es2021: true,
+    node: true
   },
   extends: [
     'eslint:recommended',
+    'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'plugin:@typescript-eslint/recommended',
+    'plugin:react/jsx-runtime',
+    'plugin:@typescript-eslint/recommended-type-checked',
+    'plugin:@typescript-eslint/stylistic-type-checked',
+    'plugin:tailwindcss/recommended',
     'prettier'
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
-    sourceType: 'module'
+    sourceType: 'module',
+    project: ['./tsconfig.eslint.json'],
+    tsconfigRootDir: __dirname
   },
-  plugins: ['react-refresh', '@typescript-eslint'],
+  plugins: ['react', 'react-refresh', '@typescript-eslint', 'tailwindcss'],
   rules: {
-    'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
+    'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    'tailwindcss/no-custom-classname': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+  },
+  overrides: [
+    {
+      files: ['*.config.{js,ts}', 'vite.config.ts', 'playwright.config.ts', 'tailwind.config.js', 'postcss.config.js'],
+      rules: {
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off'
+      }
+    }
+  ],
+  settings: {
+    react: {
+      version: 'detect'
+    }
   },
   ignorePatterns: ['dist', '.eslintrc.cjs']
 };

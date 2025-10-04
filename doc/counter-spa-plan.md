@@ -35,6 +35,11 @@
 - 端到端测试：`e2e/counter.spec.ts` 依赖 Playwright，启动 Vite dev server 后执行完整 UI 交互链路。
 - Vitest 排除了 `e2e/**`，避免 e2e 入口被单元测试收集；新增 npm 脚本 `test:e2e` 用于独立触发。
 
+## Lint 与提交流程
+- 使用基于 `@typescript-eslint`、`eslint-plugin-react` 与 `eslint-plugin-tailwindcss` 的统一 ESLint 配置，并在 `tsconfig.eslint.json` 中启用类型信息，与 VSCode ESLint 扩展保持一致。
+- `.vscode/settings.json` 启用保存时的 ESLint 自动修复，确保编辑器提示与 CI/提交策略一致。
+- 通过 Husky `pre-commit` 钩子先执行 `lint-staged` 再运行 `npm run lint`，若存在 lint 错误则阻断提交。
+
 ## 验证步骤
 - 单元测试：`npm run test -- --run`
 - e2e：

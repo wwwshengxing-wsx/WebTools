@@ -42,7 +42,9 @@ lerna-debug.log*
 *.log
 
 # Editor directories and files
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/settings.json
 .idea/
 .DS_Store
 
