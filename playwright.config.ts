@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   retries: isCI ? 2 : 0,
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://127.0.0.1:5174',
     trace: 'on-first-retry',
     video: 'on',
   },
@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 5173',
+    command: 'npm run dev -- --host 127.0.0.1 --port 5174',
     port: 5173,
     reuseExistingServer: !isCI,
   },
