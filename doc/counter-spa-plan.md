@@ -31,7 +31,9 @@
 - 单元测试：
   - `src/hooks/__tests__/useCounter.test.ts` 校验 Hook 的状态流与重置行为。
   - `src/pages/__tests__/CounterPage.test.tsx` 通过 RTL 模拟真实点击，验证页面层行为。
-  - `src/__tests__/App.test.tsx` 使用 `createMemoryRouter` 断言路由默认渲染与导航状态。
+  - `src/__tests__/App.test.tsx` 使用 `createMemoryRouter` 断言导航在不同路径下的激活态。
+  - `src/__tests__/router.test.tsx` 覆盖路由配置声明，确保 SPA 路由树正确。
+  - `src/__tests__/main.test.tsx` 校验入口文件将应用挂载到根节点，防止覆盖盲区。
 - 端到端测试：`e2e/counter.spec.ts` 依赖 Playwright，启动 Vite dev server 后执行完整 UI 交互链路。
 - Vitest 排除了 `e2e/**`，避免 e2e 入口被单元测试收集；新增 npm 脚本 `test:e2e` 用于独立触发。
 

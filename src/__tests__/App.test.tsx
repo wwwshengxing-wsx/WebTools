@@ -5,20 +5,26 @@ import App from '../App';
 import CounterPage from '../pages/CounterPage';
 
 describe('App routing shell', () => {
-  it('renders the counter page on the root route', () => {
-    const router = createMemoryRouter(
-      [
+  const routes = [
+    {
+      path: '/',
+      element: <App />,
+      children: [
         {
-          path: '/',
-          element: <App />,
-          children: [
-            {
-              index: true,
-              element: <CounterPage />,
-            },
-          ],
+          index: true,
+          element: <CounterPage />,
+        },
+        {
+          path: 'other',
+          element: <div>Other Route</div>,
         },
       ],
+    },
+  ];
+
+  it('renders the counter page on the root route', () => {
+    const router = createMemoryRouter(
+      routes,
       { initialEntries: ['/'] }
     );
 
@@ -27,9 +33,19 @@ describe('App routing shell', () => {
     expect(
       screen.getByRole('heading', { name: /interactive counter/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /counter/i })).toHaveAttribute(
-      'aria-current',
-      'page'
+    const links = screen.getAllByRole('link', { name: /counter/i });
+    expect(links.some((link) => link.getAttribute('aria-current') === 'page')).toBe(
+      true
     );
+  });
+
+  it('marks the navigation link inactive on non-root routes', () => {
+    const router = createMemoryRouter(routes, { initialEntries: ['/other'] });
+
+    render(<RouterProvider router={router} />);
+
+    const links = screen.getAllByRole('link', { name: /counter/i });
+    const lastLink = links[links.length - 1];
+    expect(lastLink?.hasAttribute('aria-current')).toBe(false);
   });
 });

@@ -11,7 +11,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reportsDirectory: 'coverage',
-      reporter: ['text', 'text-summary', 'lcov', 'html']
+      reporter: ['text', 'text-summary', 'lcov', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/__tests__/**',
+        'src/test-utils/**',
+        '**/*.config.{js,ts}',
+        'vite.config.ts'
+      ]
     },
   }
 });
