@@ -1,5 +1,5 @@
-import CounterView from '../components/CounterView';
-import { useCounter } from '../hooks/useCounter';
+import CounterView from './components/CounterView';
+import { useCounter } from './hooks/useCounter';
 
 export default function CounterPage(): JSX.Element {
   const { count, increment, decrement, reset } = useCounter();

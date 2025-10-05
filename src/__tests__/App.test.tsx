@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import App from '../App';
-import CounterPage from '../pages/CounterPage';
+import CounterPage from '../pages/Counter';
 
 describe('App routing shell', () => {
   const routes = [

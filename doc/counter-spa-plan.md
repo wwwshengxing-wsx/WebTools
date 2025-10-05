@@ -2,8 +2,8 @@
 
 ## 改动概览
 - 引入 `react-router-dom`，将应用调整为 Router 驱动的 SPA，并以 `App` 作为布局壳层。
-- 新增 `src/pages/CounterPage.tsx` 作为计数器页面入口，页面视图与状态逻辑通过组件与 Hook 解耦。
-- 抽离无状态 UI 组件 `CounterView` 与状态 Hook `useCounter`，并在对应目录下共置样式文件。
+- 新增 `src/pages/Counter/index.tsx` 作为计数器页面入口，页面视图与状态逻辑通过组件与 Hook 解耦。
+- 抽离无状态 UI 组件 `CounterView` 与状态 Hook `useCounter`，并在 `src/pages/Counter/` 目录内共置。
 - 配置 Vitest/RTL 的单元测试覆盖页面与 Hook，额外提供 Playwright e2e 用例验证真实交互路径。
 - 补充 `doc/` 设计文档，记录结构调整与验证方法。
 - 样式体系切换到 Tailwind CSS，移除手写样式文件并以原子化类实现同等视觉布局。
@@ -12,9 +12,9 @@
 - `src/main.tsx` 仅保留根节点挂载与 Provider 引导，改为渲染 `RouterProvider`。
 - 新增 `src/router.tsx`，集中定义路由表，后续扩展页面时只需在此处追加配置。
 - `App.tsx` 改为提供应用壳层（标题、导航、`Outlet`），`App.css` 更新为壳层样式。
-- 页面代码统一存放在 `src/pages/`，本次新增 `CounterPage` 并通过 Tailwind 类实现局部样式。
-- 可复用视图组件放入 `src/components/`，新增 `CounterView`，使用 Tailwind 原子类专注渲染职责。
-- 业务状态通过 `src/hooks/useCounter.ts` 暴露，便于在其它页面/组件中复用或扩展初始值策略。
+- 页面代码统一存放在 `src/pages/`，本次新增 `Counter/index.tsx` 并通过 Tailwind 类实现局部样式。
+- `Counter` 特性下的视图组件与 Hook 分别位于 `src/pages/Counter/components/` 与 `src/pages/Counter/hooks/`，便于域内复用。
+- 业务状态通过 `src/pages/Counter/hooks/useCounter.ts` 暴露，便于在其它页面/组件中复用或扩展初始值策略。
 
 ## 样式系统迁移
 - 安装并配置 `tailwindcss`, `postcss`, `autoprefixer`，在 `tailwind.config.js` 中声明 `./src/**/*.{ts,tsx}` 作为扫描范围。
@@ -23,14 +23,14 @@
 - 保持可访问性属性不变，同时通过 Tailwind 的聚焦态工具类补强键盘可用性。
 
 ## 状态与视图解耦
-- `useCounter` 负责集中管理计数器状态与操作（增/减/重置），并支持配置初始值，确保测试与复用友好。
-- `CounterView` 接收纯粹的 props 来渲染 UI，包含无障碍属性（`role="status"` + `aria-live`），避免与状态耦合。
-- `CounterPage` 只负责调度 Hook 产出的接口与视图组件组合，可在此叠加页面级描述信息或后续特性。
+- `Counter/hooks/useCounter` 负责集中管理计数器状态与操作（增/减/重置），并支持配置初始值，确保测试与复用友好。
+- `Counter/components/CounterView` 接收纯粹的 props 来渲染 UI，包含无障碍属性（`role="status"` + `aria-live`），避免与状态耦合。
+- `Counter/index` 只负责调度 Hook 产出的接口与视图组件组合，可在此叠加页面级描述信息或后续特性。
 
 ## 测试策略
 - 单元测试：
-  - `src/hooks/__tests__/useCounter.test.ts` 校验 Hook 的状态流与重置行为。
-  - `src/pages/__tests__/CounterPage.test.tsx` 通过 RTL 模拟真实点击，验证页面层行为。
+  - `src/pages/Counter/hooks/__tests__/useCounter.test.ts` 校验 Hook 的状态流与重置行为。
+  - `src/pages/Counter/__tests__/CounterPage.test.tsx` 通过 RTL 模拟真实点击，验证页面层行为。
   - `src/__tests__/App.test.tsx` 使用 `createMemoryRouter` 断言导航在不同路径下的激活态。
   - `src/__tests__/router.test.tsx` 覆盖路由配置声明，确保 SPA 路由树正确。
   - `src/__tests__/main.test.tsx` 校验入口文件将应用挂载到根节点，防止覆盖盲区。

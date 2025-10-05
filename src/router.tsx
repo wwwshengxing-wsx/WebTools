@@ -1,6 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import App from './App';
-import CounterPage from './pages/CounterPage';
+import CounterPage from './pages/Counter';
 
 export const routes: RouteObject[] = [
   {
