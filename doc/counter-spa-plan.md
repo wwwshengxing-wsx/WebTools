@@ -29,8 +29,8 @@
 
 ## 测试策略
 - 单元测试：
-  - `src/__tests__/useCounter.test.ts` 校验 Hook 的状态流与重置行为。
-  - `src/__tests__/CounterPage.test.tsx` 通过 RTL 模拟真实点击，验证页面层行为。
+  - `src/hooks/__tests__/useCounter.test.ts` 校验 Hook 的状态流与重置行为。
+  - `src/pages/__tests__/CounterPage.test.tsx` 通过 RTL 模拟真实点击，验证页面层行为。
   - `src/__tests__/App.test.tsx` 使用 `createMemoryRouter` 断言路由默认渲染与导航状态。
 - 端到端测试：`e2e/counter.spec.ts` 依赖 Playwright，启动 Vite dev server 后执行完整 UI 交互链路。
 - Vitest 排除了 `e2e/**`，避免 e2e 入口被单元测试收集；新增 npm 脚本 `test:e2e` 用于独立触发。
@@ -42,6 +42,7 @@
 
 ## 验证步骤
 - 单元测试：`npm run test -- --run`
+- 覆盖率报告：`npm run cov` 会输出终端摘要并生成 `coverage/` 下的 HTML/LCOV 报告。
 - e2e：
   1. （首次）`npx playwright install chromium` 下载运行所需浏览器。
   2. 执行 `npm run test:e2e`，Playwright 会自动启动 Vite dev server。

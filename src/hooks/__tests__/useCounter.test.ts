@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useCounter } from '../hooks/useCounter';
+import { useCounter } from '../useCounter';
 
 describe('useCounter', () => {
   it('returns the provided initial value', () => {
