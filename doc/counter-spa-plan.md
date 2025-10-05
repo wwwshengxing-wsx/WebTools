@@ -2,7 +2,9 @@
 
 ## 改动概览
 - 引入 `react-router-dom`，将应用调整为 Router 驱动的 SPA，并以 `App` 作为布局壳层。
+- 新增 `src/pages/Home/index.tsx` 作为目录页面，集中展示可访问的 Feature 列表。
 - 新增 `src/pages/Counter/index.tsx` 作为计数器页面入口，页面视图与状态逻辑通过组件与 Hook 解耦。
+- 新增 `src/pages/Storage/index.tsx` 读取/管理 localStorage 键值对，支持增删改操作。
 - 抽离无状态 UI 组件 `CounterView` 与状态 Hook `useCounter`，并在 `src/pages/Counter/` 目录内共置。
 - 配置 Vitest/RTL 的单元测试覆盖页面与 Hook，额外提供 Playwright e2e 用例验证真实交互路径。
 - 补充 `doc/` 设计文档，记录结构调整与验证方法。
@@ -12,9 +14,9 @@
 - `src/main.tsx` 仅保留根节点挂载与 Provider 引导，改为渲染 `RouterProvider`。
 - 新增 `src/router.tsx`，集中定义路由表，后续扩展页面时只需在此处追加配置。
 - `App.tsx` 改为提供应用壳层（标题、导航、`Outlet`），`App.css` 更新为壳层样式。
-- 页面代码统一存放在 `src/pages/`，本次新增 `Counter/index.tsx` 并通过 Tailwind 类实现局部样式。
-- `Counter` 特性下的视图组件与 Hook 分别位于 `src/pages/Counter/components/` 与 `src/pages/Counter/hooks/`，便于域内复用。
-- 业务状态通过 `src/pages/Counter/hooks/useCounter.ts` 暴露，便于在其它页面/组件中复用或扩展初始值策略。
+- 页面代码统一存放在 `src/pages/`，新增 `Home/`、`Counter/`、`Storage/` 三个特性目录并通过 Tailwind 类实现局部样式。
+- `Counter` 与 `Storage` 特性下的视图组件与 Hook 分别位于 `components/`、`hooks/` 子目录，便于域内复用。
+- 业务状态通过 `src/pages/Counter/hooks/useCounter.ts` 与 `src/pages/Storage/hooks/useStorageEntries.ts` 暴露。
 
 ## 样式系统迁移
 - 安装并配置 `tailwindcss`, `postcss`, `autoprefixer`，在 `tailwind.config.js` 中声明 `./src/**/*.{ts,tsx}` 作为扫描范围。
@@ -26,11 +28,17 @@
 - `Counter/hooks/useCounter` 负责集中管理计数器状态与操作（增/减/重置），并支持配置初始值，确保测试与复用友好。
 - `Counter/components/CounterView` 接收纯粹的 props 来渲染 UI，包含无障碍属性（`role="status"` + `aria-live`），避免与状态耦合。
 - `Counter/index` 只负责调度 Hook 产出的接口与视图组件组合，可在此叠加页面级描述信息或后续特性。
+- `Storage/hooks/useStorageEntries` 封装 localStorage CRUD 与去重逻辑，保证视图层调用统一。
+- `Storage/components/StorageEntryList` 提供通用列表渲染与编辑表单，页面层只需传递状态与回调。
+- `Storage/index` 组装新增表单、列表、批量清理操作，并给出当前存储摘要。
 
 ## 测试策略
 - 单元测试：
+  - `src/pages/Home/__tests__/HomePage.test.tsx` 验证目录页展示正确的导航入口。
   - `src/pages/Counter/hooks/__tests__/useCounter.test.ts` 校验 Hook 的状态流与重置行为。
   - `src/pages/Counter/__tests__/CounterPage.test.tsx` 通过 RTL 模拟真实点击，验证页面层行为。
+  - `src/pages/Storage/hooks/__tests__/useStorageEntries.test.ts` 校验 localStorage CRUD 逻辑与持久化。
+  - `src/pages/Storage/__tests__/StoragePage.test.tsx` 覆盖新增、编辑、删除、清空流程。
   - `src/__tests__/App.test.tsx` 使用 `createMemoryRouter` 断言导航在不同路径下的激活态。
   - `src/__tests__/router.test.tsx` 覆盖路由配置声明，确保 SPA 路由树正确。
   - `src/__tests__/main.test.tsx` 校验入口文件将应用挂载到根节点，防止覆盖盲区。

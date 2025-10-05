@@ -4,6 +4,8 @@ test.describe('Counter SPA', () => {
   test('increments, decrements, and resets via the UI', async ({ page }) => {
     await page.goto('/');
 
+    await page.getByRole('link', { name: 'Counter' }).click();
+
     const counterValue = page.getByRole('status', { name: 'Counter value' });
     const incrementButton = page.getByRole('button', { name: '+1' });
     const decrementButton = page.getByRole('button', { name: '-1' });

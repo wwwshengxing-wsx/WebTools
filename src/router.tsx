@@ -1,6 +1,8 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import App from './App';
 import CounterPage from './pages/Counter';
+import HomePage from './pages/Home';
+import StoragePage from './pages/Storage';
 
 export const routes: RouteObject[] = [
   {
@@ -9,7 +11,15 @@ export const routes: RouteObject[] = [
     children: [
       {
         index: true,
+        element: <HomePage />,
+      },
+      {
+        path: 'counter',
         element: <CounterPage />,
+      },
+      {
+        path: 'storage',
+        element: <StoragePage />,
       },
     ],
   },
