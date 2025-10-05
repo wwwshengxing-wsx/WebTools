@@ -50,3 +50,4 @@ lerna-debug.log*
 
 # Miscellaneous
 *.swp
+test-results
