@@ -6,7 +6,7 @@ export default function App(): JSX.Element {
       <header className="flex flex-col gap-4 px-6 pt-8 sm:flex-row sm:items-center sm:justify-between sm:px-12">
         <div className="space-y-1 text-center sm:text-left">
           <h1 className="text-3xl font-semibold tracking-[0.2em] text-slate-100">
-            React Playground
+            WebTools
           </h1>
           <p className="text-sm font-medium uppercase tracking-[0.25em] text-slate-400">
             Explore feature sandboxes
@@ -16,9 +16,10 @@ export default function App(): JSX.Element {
           {[
             { label: 'Overview', to: '/' },
             { label: 'Counter', to: '/counter' },
-            { label: 'Storage', to: '/storage' },
-            { label: 'Text Replacement', to: '/text-replacement' },
-          ].map(({ label, to }) => (
+          { label: 'Storage', to: '/storage' },
+          { label: 'Text Replacement', to: '/text-replacement' },
+          { label: 'JSON Tools', to: '/json-tools' },
+        ].map(({ label, to }) => (
             <NavLink
               key={label}
               end={to === '/'}

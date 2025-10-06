@@ -16,6 +16,11 @@ const cards = [
     description: 'Import, edit, and export shortcut → phrase pairs with full history tracking.',
     to: '/text-replacement',
   },
+  {
+    title: 'JSON Tools',
+    description: 'Format, validate, and inspect JSON with a live tree preview and quick export helpers.',
+    to: '/json-tools',
+  },
 ];
 
 export default function HomePage(): JSX.Element {
@@ -23,7 +28,7 @@ export default function HomePage(): JSX.Element {
     <section className="w-full max-w-5xl px-4">
       <header className="mb-8 text-center sm:mb-12">
         <h2 className="text-3xl font-semibold tracking-wide text-slate-100 sm:text-4xl">
-          Feature Directory
+          Welcome to WebTools
         </h2>
         <p className="mt-3 text-base text-slate-300 sm:text-lg">
           Jump into any sandbox below to explore interactive UI patterns and state management demos.

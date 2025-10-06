@@ -4,6 +4,7 @@ import CounterPage from './pages/Counter';
 import HomePage from './pages/Home';
 import StoragePage from './pages/Storage';
 import TextReplacementPage from './pages/TextReplacement';
+import JsonToolsPage from './pages/JsonTools';
 
 export const routes: RouteObject[] = [
   {
@@ -25,6 +26,10 @@ export const routes: RouteObject[] = [
       {
         path: 'text-replacement',
         element: <TextReplacementPage />,
+      },
+      {
+        path: 'json-tools',
+        element: <JsonToolsPage />,
       },
     ],
   },

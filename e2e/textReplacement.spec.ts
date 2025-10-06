@@ -55,7 +55,7 @@ test('text replacement workflow with import, history, and export', async ({ page
     .getByRole('navigation', { name: 'Primary' })
     .getByRole('link', { name: 'Text Replacement' })
     .click();
-  await expect(page.getByRole('heading', { name: 'Text Replacement Manager' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'WebTools' })).toBeVisible();
   await expect(page.getByText('No entries yet')).toBeVisible();
 
   await page.getByRole('button', { name: 'New entry' }).click();

@@ -193,11 +193,11 @@ export default function TextReplacementPage(): JSX.Element {
     <section className="flex w-full flex-col gap-8 px-4 pb-12">
       <header className="max-w-4xl space-y-3">
         <h2 className="text-3xl font-semibold tracking-wide text-slate-100 sm:text-4xl">
-          Text Replacement Manager
+          WebTools
         </h2>
         <p className="text-base text-slate-300 sm:text-lg">
-          Parse and curate shortcut → phrase pairs, track changes locally, and keep a
-          full edit history. Use Import to preview XML differences before merging.
+          Manage and compare text replacement shortcuts, inspect differences before merging,
+          and keep a complete audit history.
         </p>
         <p className="text-xs text-slate-500">
           Current entries stored: {entries.length}.
