@@ -1,5 +1,7 @@
 import type { ParsedTextReplacementItem } from '../../lib/xml';
 
+export const NO_TAG_FILTER = '__NO_TAG__';
+
 export type SortBy = 'updatedAt' | 'shortcut' | 'phrase';
 export type SortOrder = 'asc' | 'desc';
 

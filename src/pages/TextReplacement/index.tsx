@@ -11,6 +11,7 @@ import {
   type TextReplacementEntry,
   type SortBy,
 } from './hooks/useTextReplacementEntries';
+import { NO_TAG_FILTER } from './hooks/useTextReplacementEntries/types';
 
 export default function TextReplacementPage(): JSX.Element {
   const {
@@ -184,6 +185,7 @@ export default function TextReplacementPage(): JSX.Element {
   };
 
   const handleAddTagToSelection = (tag: string) => {
+    if (tag === NO_TAG_FILTER) return;
     addTagToSelectedEntries(tag);
   };
 

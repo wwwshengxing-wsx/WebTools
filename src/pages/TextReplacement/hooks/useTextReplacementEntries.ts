@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { serializeTextReplacementItems } from '../lib/xml';
-import type {
-  ComparisonPreviewState,
-  HistoryEntry,
-  ImportPreviewState,
-  SortBy,
-  SortOrder,
-  TextReplacementEntry,
-  UseTextReplacementEntriesResult,
+import {
+  NO_TAG_FILTER,
+  type ComparisonPreviewState,
+  type HistoryEntry,
+  type ImportPreviewState,
+  type SortBy,
+  type SortOrder,
+  type TextReplacementEntry,
+  type UseTextReplacementEntriesResult,
 } from './useTextReplacementEntries/types';
 import {
   persistEntries,
@@ -91,12 +92,20 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
 
   const availableTags = useMemo(() => {
     const tagSet = new Set<string>();
+    let hasEmptyTag = false;
     entries.forEach((entry) => {
+      if (entry.tags.length === 0) {
+        hasEmptyTag = true;
+      }
       entry.tags.forEach((tag) => {
         if (tag.trim()) tagSet.add(tag);
       });
     });
-    return Array.from(tagSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const tags = Array.from(tagSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    if (hasEmptyTag) {
+      tags.push(NO_TAG_FILTER);
+    }
+    return tags;
   }, [entries]);
 
   useEffect(() => {
@@ -140,8 +149,15 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     const tagFilterActive = selectedTags.length > 0;
 
     const filtered = entries.filter((entry) => {
-      if (tagFilterActive && !selectedTags.every((tag) => entry.tags.includes(tag))) {
-        return false;
+      if (tagFilterActive) {
+        const entryTags = entry.tags;
+        const matchesAllFilters = selectedTags.every((tag) => {
+          if (tag === NO_TAG_FILTER) {
+            return entryTags.length === 0;
+          }
+          return entryTags.includes(tag);
+        });
+        if (!matchesAllFilters) return false;
       }
 
       if (!term) return true;

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SortBy, SortOrder } from '../hooks/useTextReplacementEntries';
+import { NO_TAG_FILTER } from '../hooks/useTextReplacementEntries/types';
 
 interface TextReplacementToolbarProps {
   searchTerm: string;
@@ -77,9 +78,12 @@ export default function TextReplacementToolbar(
     if (!availableTags.length) return [] as string[];
     const lowerDraft = normalizedDraft.toLowerCase();
     return availableTags
+      .filter((tag) => tag !== NO_TAG_FILTER)
       .filter((tag) => !lowerDraft || tag.toLowerCase().includes(lowerDraft))
       .slice(0, 8);
   }, [availableTags, normalizedDraft]);
+
+  const getTagLabel = useCallback((tag: string) => (tag === NO_TAG_FILTER ? 'No tags' : tag), []);
 
   const handleSubmitTag = () => {
     if (!normalizedDraft) return;
@@ -191,6 +195,7 @@ export default function TextReplacementToolbar(
           <div className="flex flex-wrap gap-2">
             {availableTags.map((tag) => {
               const isActive = selectedTags.includes(tag);
+              const label = getTagLabel(tag);
               return (
                 <button
                   key={tag}
@@ -202,7 +207,7 @@ export default function TextReplacementToolbar(
                       : 'bg-slate-800/80 text-slate-200 hover:bg-slate-700 focus-visible:outline-slate-400'
                   }`}
                 >
-                  {tag}
+                  {label}
                 </button>
               );
             })}
@@ -286,7 +291,7 @@ export default function TextReplacementToolbar(
                       }}
                       className="rounded-full bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-200 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
                     >
-                      {tag}
+                      {getTagLabel(tag)}
                     </button>
                   ))}
                 </div>
