@@ -26,7 +26,7 @@ export function TextEditor({ value, onChange }: TextEditorProps): JSX.Element {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="h-full flex-1 resize-none bg-transparent px-4 py-3 font-mono text-sm text-slate-100 outline-none"
-        aria-label="JSON 输入"
+        aria-label="JSON input"
         spellCheck={false}
       />
     </div>

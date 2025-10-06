@@ -1,3 +1,5 @@
+import type { JsonValue } from '../utils/tree';
+
 const ESCAPE_MAP: Record<string, string> = {
   '\\n': '\n',
   '\\r': '\r',
@@ -15,7 +17,7 @@ function unescapeControlCharacters(input: string): string {
   return input.replace(/\\(?:n|r|t|f|b|\\)/g, (match) => ESCAPE_MAP[match] ?? match);
 }
 
-export function stringifyJson(value: unknown, preserveEscapes: boolean): string {
+export function stringifyJson(value: JsonValue, preserveEscapes: boolean): string {
   const formatted = JSON.stringify(value, null, 2);
   if (preserveEscapes) {
     return formatted;

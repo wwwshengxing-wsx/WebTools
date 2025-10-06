@@ -54,7 +54,7 @@ export function TreeNode({
             className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 transition hover:border-sky-400 hover:text-sky-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
             onClick={() => onToggle(path)}
             aria-expanded={isExpanded}
-            aria-label={`${isExpanded ? '折叠' : '展开'} ${label}`}
+            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${label}`}
           >
             {isExpanded ? '-' : '+'}
           </button>
@@ -69,8 +69,8 @@ export function TreeNode({
         {expandable && !isExpanded ? (
           <span className="text-xs text-slate-500">
             {isArray(value)
-              ? `(${value.length} 项)`
-              : `(${Object.keys(value).length} 个键)`}
+              ? `(${value.length} items)`
+              : `(${Object.keys(value).length} keys)`}
           </span>
         ) : null}
       </div>

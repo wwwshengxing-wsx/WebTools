@@ -24,11 +24,11 @@ export default function JsonToolsPage(): JSX.Element {
   } = useJsonTool();
 
   return (
-    <section className="w-full rounded-3xl border border-slate-800/60 bg-slate-900/55 px-4 py-6 text-slate-100 shadow-[0_45px_80px_rgba(2,6,23,0.55)] backdrop-blur-2xl sm:px-8 sm:py-8">
+    <section className="w-full rounded-3xl border border-slate-800/60 bg-slate-900/55 px-4 py-6 text-slate-100 shadow-[0_45px_80px_rgba(2,6,23,0.55)] backdrop-blur-2xl sm:p-8">
       <header className="space-y-2 pb-4 text-center sm:text-left">
-        <h2 className="text-3xl font-semibold tracking-wide text-slate-100">JSON 工具</h2>
+        <h2 className="text-3xl font-semibold tracking-wide text-slate-100">JSON Tools</h2>
         <p className="text-sm text-slate-300 sm:text-base">
-          粘贴或编写 JSON 数据，快速格式化、验证，并在右侧树状结构中对比字段层级。
+          Paste or compose JSON payloads, then format, validate, and inspect them via the live tree view.
         </p>
       </header>
       <Toolbar
@@ -36,7 +36,9 @@ export default function JsonToolsPage(): JSX.Element {
         onRun={runParse}
         onExpandAll={() => setAllExpanded(true)}
         onCollapseAll={() => setAllExpanded(false)}
-        onCopy={copyResult}
+        onCopy={() => {
+          void copyResult();
+        }}
         onDownload={downloadResult}
         onClear={clearInput}
         isPreserveEscapes={isPreserveEscapes}

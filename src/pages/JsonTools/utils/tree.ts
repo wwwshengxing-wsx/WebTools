@@ -1,16 +1,27 @@
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonObject
-  | JsonArray;
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonArray = unknown[];
+export type JsonObject = Record<string, unknown>;
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
-export type JsonObject = Record<string, JsonValue>;
-export type JsonArray = JsonValue[];
+export function isJsonValue(value: unknown): value is JsonValue {
+  if (value === null) {
+    return true;
+  }
+  const valueType = typeof value;
+  if (valueType === 'string' || valueType === 'number' || valueType === 'boolean') {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every((item) => isJsonValue(item));
+  }
+  if (valueType === 'object') {
+    return Object.values(value as JsonObject).every((item) => isJsonValue(item));
+  }
+  return false;
+}
 
 export function isObject(value: unknown): value is JsonObject {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 export function isArray(value: unknown): value is JsonArray {
@@ -42,7 +53,7 @@ export function childPath(parentPath: string, key: string | number): string {
 }
 
 export function collectExpandablePaths(
-  value: unknown,
+  value: JsonValue,
   currentPath: string,
   store: Set<string>,
 ): void {
@@ -54,17 +65,23 @@ export function collectExpandablePaths(
 
   if (isArray(value)) {
     value.forEach((item, index) => {
-      collectExpandablePaths(item, childPath(currentPath, index), store);
+      if (isJsonValue(item)) {
+        collectExpandablePaths(item, childPath(currentPath, index), store);
+      }
     });
     return;
   }
 
-  Object.entries(value).forEach(([key, child]) => {
-    collectExpandablePaths(child, childPath(currentPath, key), store);
-  });
+  if (isObject(value)) {
+    Object.entries(value).forEach(([key, child]) => {
+      if (isJsonValue(child)) {
+        collectExpandablePaths(child, childPath(currentPath, key), store);
+      }
+    });
+  }
 }
 
-export function collectFirstLevelExpanded(value: unknown, rootPath: string): Set<string> {
+export function collectFirstLevelExpanded(value: JsonValue, rootPath: string): Set<string> {
   const result = new Set<string>();
   if (!isExpandable(value)) {
     return result;
@@ -78,10 +95,12 @@ export function collectFirstLevelExpanded(value: unknown, rootPath: string): Set
     });
     return result;
   }
-  Object.entries(value).forEach(([key, child]) => {
-    if (isExpandable(child)) {
-      result.add(childPath(rootPath, key));
-    }
-  });
+  if (isObject(value)) {
+    Object.entries(value).forEach(([key, child]) => {
+      if (isExpandable(child)) {
+        result.add(childPath(rootPath, key));
+      }
+    });
+  }
   return result;
 }

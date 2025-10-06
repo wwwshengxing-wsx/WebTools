@@ -5,6 +5,8 @@ import {
   collectExpandablePaths,
   collectFirstLevelExpanded,
   isExpandable,
+  isJsonValue,
+  type JsonValue,
 } from '../utils/tree';
 
 const ROOT_PATH = 'root';
@@ -16,18 +18,23 @@ function extractErrorMessage(error: unknown): string {
   return String(error);
 }
 
-const initialParse = (() => {
+const initialParse: JsonValue | undefined = (() => {
   try {
-    return JSON.parse(sampleJson);
+    const candidate = JSON.parse(sampleJson) as unknown;
+    if (isJsonValue(candidate)) {
+      return candidate;
+    }
+    console.error('Sample JSON did not resolve to a supported structure.');
+    return undefined;
   } catch (error) {
     console.error('Failed to parse sample JSON', error);
-    return null;
+    return undefined;
   }
 })();
 
 export interface UseJsonToolState {
   rawInput: string;
-  parsedValue: unknown | null;
+  parsedValue: JsonValue | undefined;
   parseError: string | null;
   isPreserveEscapes: boolean;
   expandedPaths: Set<string>;
@@ -46,11 +53,11 @@ export interface UseJsonToolState {
 
 export function useJsonTool(): UseJsonToolState {
   const [rawInput, setRawInput] = useState(sampleJson);
-  const [parsedValue, setParsedValue] = useState<unknown | null>(initialParse);
+  const [parsedValue, setParsedValue] = useState<JsonValue | undefined>(initialParse);
   const [parseError, setParseError] = useState<string | null>(null);
   const [isPreserveEscapes, setIsPreserveEscapes] = useState(true);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
-    if (!initialParse) {
+    if (initialParse === undefined) {
       return new Set([ROOT_PATH]);
     }
     return collectFirstLevelExpanded(initialParse, ROOT_PATH);
@@ -58,12 +65,12 @@ export function useJsonTool(): UseJsonToolState {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [lastFormatted, setLastFormatted] = useState<string | null>(null);
 
-  const parsedRef = useRef<unknown | null>(parsedValue);
+  const parsedRef = useRef<JsonValue | undefined>(parsedValue);
   useEffect(() => {
     parsedRef.current = parsedValue;
   }, [parsedValue]);
 
-  const setExpandedPathsForValue = useCallback((value: unknown) => {
+  const setExpandedPathsForValue = useCallback((value: JsonValue) => {
     if (!isExpandable(value)) {
       setExpandedPaths(new Set([ROOT_PATH]));
       return;
@@ -84,9 +91,13 @@ export function useJsonTool(): UseJsonToolState {
   }, [actionMessage]);
 
   const parseInput = useCallback(
-    (input: string, { silent }: { silent?: boolean } = {}): unknown | null => {
+    (input: string, { silent }: { silent?: boolean } = {}): JsonValue | undefined => {
       try {
-        const value = JSON.parse(input);
+        const candidate = JSON.parse(input) as unknown;
+        if (!isJsonValue(candidate)) {
+          throw new Error('Parsed result includes unsupported value types');
+        }
+        const value = candidate;
         setParsedValue(value);
         setParseError(null);
         setExpandedPathsForValue(value);
@@ -94,12 +105,12 @@ export function useJsonTool(): UseJsonToolState {
       } catch (error) {
         const message = extractErrorMessage(error);
         setParseError(message);
-        setParsedValue(null);
+        setParsedValue(undefined);
         setExpandedPaths(new Set([ROOT_PATH]));
         if (!silent) {
-          scheduleMessage('解析失败，请检查 JSON 格式');
+          scheduleMessage('Parse failed, please check JSON syntax');
         }
-        return null;
+        return undefined;
       }
     },
     [scheduleMessage, setExpandedPathsForValue],
@@ -114,21 +125,21 @@ export function useJsonTool(): UseJsonToolState {
 
   const formatJson = useCallback(() => {
     const value = parseInput(rawInput);
-    if (value === null) {
+    if (value === undefined) {
       return;
     }
     const formatted = JSON.stringify(value, null, 2);
     setRawInput(formatted);
     setLastFormatted(formatted);
-    scheduleMessage('JSON 已格式化');
+    scheduleMessage('JSON formatted');
   }, [parseInput, rawInput, scheduleMessage]);
 
   const runParse = useCallback(() => {
     const value = parseInput(rawInput);
-    if (value === null) {
+    if (value === undefined) {
       return;
     }
-    scheduleMessage('解析成功');
+    scheduleMessage('Parse succeeded');
   }, [parseInput, rawInput, scheduleMessage]);
 
   const togglePreserveEscapes = useCallback(() => {
@@ -154,7 +165,7 @@ export function useJsonTool(): UseJsonToolState {
         return;
       }
       const value = parsedRef.current;
-      if (value === null || value === undefined) {
+      if (value === undefined) {
         return;
       }
       const next = new Set<string>();
@@ -165,7 +176,7 @@ export function useJsonTool(): UseJsonToolState {
   );
 
   const buildOutputString = useCallback(() => {
-    if (parsedRef.current === null) {
+    if (parsedRef.current === undefined) {
       return null;
     }
     return stringifyJson(parsedRef.current, isPreserveEscapes);
@@ -174,25 +185,25 @@ export function useJsonTool(): UseJsonToolState {
   const copyResult = useCallback(async () => {
     const output = buildOutputString();
     if (!output) {
-      scheduleMessage('无法复制：当前 JSON 无效');
+      scheduleMessage('Copy unavailable: JSON is invalid');
       return;
     }
     try {
       if (!navigator.clipboard) {
-        throw new Error('Clipboard API 不可用');
+        throw new Error('Clipboard API unavailable');
       }
       await navigator.clipboard.writeText(output);
-      scheduleMessage('已复制到剪贴板');
+      scheduleMessage('Copied to clipboard');
     } catch (error) {
       console.error('Failed to copy JSON', error);
-      scheduleMessage('复制失败，请手动复制');
+      scheduleMessage('Copy failed, please copy manually');
     }
   }, [buildOutputString, scheduleMessage]);
 
   const downloadResult = useCallback(() => {
     const output = buildOutputString();
     if (!output) {
-      scheduleMessage('无法导出：当前 JSON 无效');
+      scheduleMessage('Export unavailable: JSON is invalid');
       return;
     }
     try {
@@ -205,19 +216,19 @@ export function useJsonTool(): UseJsonToolState {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      scheduleMessage('已导出 JSON 文件');
+      scheduleMessage('Exported JSON file');
     } catch (error) {
       console.error('Failed to export JSON', error);
-      scheduleMessage('导出失败');
+      scheduleMessage('Export failed');
     }
   }, [buildOutputString, scheduleMessage]);
 
   const clearInput = useCallback(() => {
     setRawInput('');
-    setParsedValue(null);
+    setParsedValue(undefined);
     setParseError(null);
     setExpandedPaths(new Set([ROOT_PATH]));
-    scheduleMessage('输入已清空');
+    scheduleMessage('Input cleared');
   }, [scheduleMessage]);
 
   const expandedPathsMemo = useMemo(() => new Set(expandedPaths), [expandedPaths]);

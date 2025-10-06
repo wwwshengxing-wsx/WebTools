@@ -32,27 +32,27 @@ export function Toolbar({
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-slate-700 bg-slate-900/70 p-4 shadow-lg shadow-slate-950/40 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className={buttonBase} onClick={onFormat} aria-label="格式化 JSON">
-          格式化
+        <button type="button" className={buttonBase} onClick={onFormat} aria-label="Format JSON">
+          Format
         </button>
-        <button type="button" className={buttonBase} onClick={onRun} aria-label="运行解析">
-          在线运行
+        <button type="button" className={buttonBase} onClick={onRun} aria-label="Run parse">
+          Run
         </button>
         <div className="mx-2 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
-        <button type="button" className={subtleButton} onClick={onExpandAll} aria-label="全部展开">
-          全部展开
+        <button type="button" className={subtleButton} onClick={onExpandAll} aria-label="Expand all">
+          Expand all
         </button>
-        <button type="button" className={subtleButton} onClick={onCollapseAll} aria-label="全部折叠">
-          全部折叠
+        <button type="button" className={subtleButton} onClick={onCollapseAll} aria-label="Collapse all">
+          Collapse all
         </button>
-        <button type="button" className={subtleButton} onClick={onCopy} aria-label="复制 JSON">
-          复制结果
+        <button type="button" className={subtleButton} onClick={onCopy} aria-label="Copy JSON">
+          Copy result
         </button>
-        <button type="button" className={subtleButton} onClick={onDownload} aria-label="导出 JSON">
-          导出 JSON
+        <button type="button" className={subtleButton} onClick={onDownload} aria-label="Export JSON">
+          Export JSON
         </button>
-        <button type="button" className={subtleButton} onClick={onClear} aria-label="清空输入">
-          清空
+        <button type="button" className={subtleButton} onClick={onClear} aria-label="Clear input">
+          Clear
         </button>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
@@ -62,9 +62,9 @@ export function Toolbar({
             checked={isPreserveEscapes}
             onChange={onTogglePreserveEscapes}
             className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-300"
-            aria-label="保留转义字符"
+            aria-label="Preserve escape characters"
           />
-          保留转义
+          Preserve escapes
         </label>
         {actionMessage ? (
           <span className="text-xs text-sky-300" role="status">
