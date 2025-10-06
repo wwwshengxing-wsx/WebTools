@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import type { SortBy, SortOrder } from '../hooks/useTextReplacementEntries';
 
 interface TextReplacementToolbarProps {
@@ -6,6 +7,8 @@ interface TextReplacementToolbarProps {
   sortOrder: SortOrder;
   availableTags: string[];
   selectedTags: string[];
+  selectionMode: boolean;
+  selectedCount: number;
   onSearchTermChange: (value: string) => void;
   onSortByChange: (value: SortBy) => void;
   onSortOrderToggle: () => void;
@@ -16,6 +19,11 @@ interface TextReplacementToolbarProps {
   onTagToggle: (tag: string) => void;
   onClearTagFilters: () => void;
   onClearAll: () => void;
+  onToggleSelectionMode: (enabled?: boolean) => void;
+  onSelectAllVisible: () => void;
+  onClearSelection: () => void;
+  onDeleteSelected: () => void;
+  onAddTagToSelection: (tag: string) => void;
 }
 
 const sortByLabels: Record<SortBy, string> = {
@@ -31,21 +39,54 @@ export default function TextReplacementToolbar(
     searchTerm,
     sortBy,
     sortOrder,
-    availableTags,
-    selectedTags,
-    onSearchTermChange,
-    onSortByChange,
-    onSortOrderToggle,
-    onAddClick,
-    onCompareClick,
-    onImportClick,
-    onExportClick,
-    onTagToggle,
-    onClearTagFilters,
-    onClearAll,
+  availableTags,
+  selectedTags,
+  selectionMode,
+  selectedCount,
+  onSearchTermChange,
+  onSortByChange,
+  onSortOrderToggle,
+  onAddClick,
+  onCompareClick,
+  onImportClick,
+  onExportClick,
+  onTagToggle,
+  onClearTagFilters,
+  onClearAll,
+  onToggleSelectionMode,
+  onSelectAllVisible,
+  onClearSelection,
+  onDeleteSelected,
+  onAddTagToSelection,
   } = props;
 
   const hasTagFilters = selectedTags.length > 0;
+  const hasSelection = selectedCount > 0;
+  const [isTagFormOpen, setIsTagFormOpen] = useState(false);
+  const [tagDraft, setTagDraft] = useState('');
+  const normalizedDraft = tagDraft.trim();
+
+  useEffect(() => {
+    if (!selectionMode) {
+      setIsTagFormOpen(false);
+      setTagDraft('');
+    }
+  }, [selectionMode]);
+
+  const tagSuggestions = useMemo(() => {
+    if (!availableTags.length) return [] as string[];
+    const lowerDraft = normalizedDraft.toLowerCase();
+    return availableTags
+      .filter((tag) => !lowerDraft || tag.toLowerCase().includes(lowerDraft))
+      .slice(0, 8);
+  }, [availableTags, normalizedDraft]);
+
+  const handleSubmitTag = () => {
+    if (!normalizedDraft) return;
+    onAddTagToSelection(normalizedDraft);
+    setTagDraft('');
+    setIsTagFormOpen(false);
+  };
 
   return (
     <div className="flex flex-col gap-6 rounded-3xl border border-slate-700/70 bg-slate-900/70 p-6 shadow-[0_30px_50px_rgba(15,23,42,0.35)]">
@@ -120,6 +161,15 @@ export default function TextReplacementToolbar(
           >
             Clear all
           </button>
+          <button
+            type="button"
+            onClick={() => onToggleSelectionMode()}
+            className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 ${
+              selectionMode ? 'bg-slate-200 text-slate-900' : 'bg-slate-700 text-slate-200'
+            }`}
+          >
+            {selectionMode ? 'Exit selection' : 'Select multiple'}
+          </button>
         </div>
       </div>
 
@@ -159,6 +209,92 @@ export default function TextReplacementToolbar(
           </div>
         )}
       </div>
+
+      {selectionMode ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-700/70 bg-slate-900/80 px-4 py-3 text-sm text-slate-200">
+          <span className="font-semibold">{selectedCount} selected</span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onSelectAllVisible}
+              className="rounded-full bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+            >
+              Select visible
+            </button>
+            <button
+              type="button"
+              onClick={onClearSelection}
+              disabled={!hasSelection}
+              className="rounded-full bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 disabled:opacity-40 disabled:hover:translate-y-0"
+            >
+              Clear selection
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!hasSelection) return;
+                setIsTagFormOpen((prev) => !prev);
+              }}
+              disabled={!hasSelection}
+              className="rounded-full bg-violet-500/80 px-3 py-1 text-xs font-semibold text-violet-50 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-200 disabled:opacity-40 disabled:hover:translate-y-0"
+            >
+              {isTagFormOpen ? 'Close tag picker' : 'Add tag'}
+            </button>
+            <button
+              type="button"
+              onClick={onDeleteSelected}
+              disabled={!hasSelection}
+              className="rounded-full bg-rose-500/80 px-3 py-1 text-xs font-semibold text-rose-50 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-200 disabled:opacity-40 disabled:hover:translate-y-0"
+            >
+              Delete selected
+            </button>
+          </div>
+          {isTagFormOpen ? (
+            <div className="flex w-full flex-col gap-2 rounded-2xl border border-violet-500/40 bg-violet-500/10 px-4 py-3 text-xs text-slate-200 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-1 flex-wrap items-center gap-2">
+                <input
+                  value={tagDraft}
+                  onChange={(event) => setTagDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleSubmitTag();
+                    }
+                  }}
+                  placeholder="Enter a tag (press Enter to apply)"
+                  className="h-9 flex-1 rounded-lg border border-violet-500/70 bg-slate-900/70 px-3 text-sm text-slate-100 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+                />
+                <button
+                  type="button"
+                  onClick={handleSubmitTag}
+                  disabled={!normalizedDraft}
+                  className="inline-flex items-center justify-center rounded-full bg-violet-500 px-4 py-1.5 text-xs font-semibold text-slate-900 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-200 disabled:opacity-40 disabled:hover:translate-y-0"
+                >
+                  Apply tag
+                </button>
+              </div>
+              {tagSuggestions.length > 0 ? (
+                <div className="flex flex-wrap gap-2 pt-2 sm:pt-0">
+                  {tagSuggestions.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        setTagDraft(tag);
+                        onAddTagToSelection(tag);
+                        setIsTagFormOpen(false);
+                      }}
+                      className="rounded-full bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-200 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

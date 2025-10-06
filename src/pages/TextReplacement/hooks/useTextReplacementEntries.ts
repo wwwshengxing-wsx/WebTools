@@ -53,6 +53,8 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
   const [selectedTags, setSelectedTagsState] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<ImportPreviewState | null>(null);
   const [comparisonPreview, setComparisonPreview] = useState<ComparisonPreviewState | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
 
   const entriesRef = useRef(entries);
   const historyRef = useRef(historyEntries);
@@ -113,6 +115,26 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     setSelectedTagsState([]);
   }, []);
 
+  const clearSelection = useCallback(() => {
+    setSelectedEntryIds([]);
+  }, []);
+
+  const toggleSelectionMode = useCallback((enabled?: boolean) => {
+    setSelectionMode((prev) => {
+      const next = typeof enabled === 'boolean' ? enabled : !prev;
+      if (!next) {
+        setSelectedEntryIds([]);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleEntrySelection = useCallback((entryId: string) => {
+    setSelectedEntryIds((prev) =>
+      prev.includes(entryId) ? prev.filter((id) => id !== entryId) : [...prev, entryId]
+    );
+  }, []);
+
   const visibleEntries = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     const tagFilterActive = selectedTags.length > 0;
@@ -143,6 +165,18 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
 
     return sortOrder === 'desc' ? sorted.reverse() : sorted;
   }, [entries, searchTerm, selectedTags, sortBy, sortOrder]);
+
+  useEffect(() => {
+    setSelectedEntryIds((prev) => prev.filter((id) => entries.some((entry) => entry.id === id)));
+  }, [entries]);
+
+  useEffect(() => {
+    setSelectedEntryIds((prev) => prev.filter((id) => visibleEntries.some((entry) => entry.id === id)));
+  }, [visibleEntries]);
+
+  const selectAllVisibleEntries = useCallback(() => {
+    setSelectedEntryIds(visibleEntries.map((entry) => entry.id));
+  }, [visibleEntries]);
 
   const appendHistory = useCallback(
     (record: HistoryEntry | null) => {
@@ -263,9 +297,34 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
         appendHistory(history);
         return nextEntries;
       });
+      setSelectedEntryIds((prev) => prev.filter((entryId) => entryId !== id));
     },
     [appendHistory]
   );
+
+  const deleteSelectedEntries = useCallback(() => {
+    if (selectedEntryIds.length === 0) return;
+    const idsToDelete = new Set(selectedEntryIds);
+    setEntries((prev) => {
+      if (idsToDelete.size === 0) return prev;
+      const before = cloneEntries(prev);
+      const nextEntries = prev.filter((entry) => !idsToDelete.has(entry.id));
+      if (nextEntries.length === prev.length) {
+        return prev;
+      }
+      const count = idsToDelete.size;
+      const history = createHistoryEntry(
+        'delete',
+        `Deleted ${count} entr${count === 1 ? 'y' : 'ies'} (batch)`,
+        before,
+        nextEntries
+      );
+      appendHistory(history);
+      return nextEntries;
+    });
+    clearSelection();
+    setSelectionMode(false);
+  }, [appendHistory, clearSelection, selectedEntryIds]);
 
   const {
     prepareImportPreview,
@@ -347,6 +406,43 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     return serializeTextReplacementItems(items);
   }, []);
 
+  const addTagToSelectedEntries = useCallback(
+    (tag: string) => {
+      const normalized = normalizeTags([tag])[0];
+      if (!normalized || selectedEntryIds.length === 0) return;
+      const selectedSet = new Set(selectedEntryIds);
+      const now = new Date().toISOString();
+
+      setEntries((prev) => {
+        const before = cloneEntries(prev);
+        let changed = false;
+        const nextEntries = prev.map((entry) => {
+          if (!selectedSet.has(entry.id)) return entry;
+          if (entry.tags.includes(normalized)) return entry;
+          changed = true;
+          return {
+            ...entry,
+            tags: [...entry.tags, normalized],
+            updatedAt: now,
+          };
+        });
+
+        if (!changed) return prev;
+
+        const count = selectedSet.size;
+        const history = createHistoryEntry(
+          'update',
+          `Added tag "${normalized}" to ${count} entr${count === 1 ? 'y' : 'ies'}`,
+          before,
+          nextEntries
+        );
+        appendHistory(history);
+        return nextEntries;
+      });
+    },
+    [appendHistory, selectedEntryIds]
+  );
+
   const clearAllEntries = useCallback(() => {
     setEntries([]);
     setHistoryEntries([]);
@@ -378,8 +474,16 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     setSelectedTags,
     toggleTagFilter,
     clearTagFilters,
+    selectionMode,
+    selectedEntryIds,
+    toggleSelectionMode,
+    toggleEntrySelection,
+    selectAllVisibleEntries,
+    clearSelection,
     saveEntry,
     deleteEntry,
+    deleteSelectedEntries,
+    addTagToSelectedEntries,
     prepareImportPreview,
     toggleImportSelection,
     selectAllImportItems,

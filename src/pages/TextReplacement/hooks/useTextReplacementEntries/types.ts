@@ -67,6 +67,8 @@ export interface UseTextReplacementEntriesResult {
   searchTerm: string;
   availableTags: string[];
   selectedTags: string[];
+  selectionMode: boolean;
+  selectedEntryIds: string[];
   historyEntries: HistoryEntry[];
   importPreview: ImportPreviewState | null;
   comparisonPreview: ComparisonPreviewState | null;
@@ -76,8 +78,14 @@ export interface UseTextReplacementEntriesResult {
   setSelectedTags: (tags: string[]) => void;
   toggleTagFilter: (tag: string) => void;
   clearTagFilters: () => void;
+  toggleSelectionMode: (enabled?: boolean) => void;
+  toggleEntrySelection: (entryId: string) => void;
+  selectAllVisibleEntries: () => void;
+  clearSelection: () => void;
   saveEntry: (input: { id?: string; shortcut: string; phrase: string; tags: string[] }) => void;
   deleteEntry: (id: string) => void;
+  deleteSelectedEntries: () => void;
+  addTagToSelectedEntries: (tag: string) => void;
   prepareImportPreview: (items: ParsedTextReplacementItem[], fileName: string) => void;
   toggleImportSelection: (id: string) => void;
   selectAllImportItems: (selected: boolean) => void;

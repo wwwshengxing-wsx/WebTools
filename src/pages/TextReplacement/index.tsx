@@ -24,13 +24,21 @@ export default function TextReplacementPage(): JSX.Element {
     comparisonPreview,
     availableTags,
     selectedTags,
+    selectionMode,
+    selectedEntryIds,
     setSearchTerm,
     setSortBy,
     toggleSortOrder,
     toggleTagFilter,
     clearTagFilters,
+    toggleSelectionMode,
+    toggleEntrySelection,
+    selectAllVisibleEntries,
+    clearSelection,
     saveEntry,
     deleteEntry,
+    deleteSelectedEntries,
+    addTagToSelectedEntries,
     prepareImportPreview,
     toggleImportSelection,
     selectAllImportItems,
@@ -151,6 +159,34 @@ export default function TextReplacementPage(): JSX.Element {
     clearAllEntries();
   };
 
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      if (!selectionMode) toggleSelectionMode(true);
+      selectAllVisibleEntries();
+    } else {
+      clearSelection();
+      toggleSelectionMode(false);
+    }
+  };
+
+  const handleEntrySelectionToggle = (entryId: string) => {
+    if (!selectionMode) toggleSelectionMode(true);
+    toggleEntrySelection(entryId);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedEntryIds.length === 0) return;
+    const confirmed = window.confirm(
+      `Delete ${selectedEntryIds.length} selected entr${selectedEntryIds.length === 1 ? 'y' : 'ies'}?`
+    );
+    if (!confirmed) return;
+    deleteSelectedEntries();
+  };
+
+  const handleAddTagToSelection = (tag: string) => {
+    addTagToSelectedEntries(tag);
+  };
+
   return (
     <section className="flex w-full flex-col gap-8 px-4 pb-12">
       <header className="max-w-4xl space-y-3">
@@ -172,6 +208,8 @@ export default function TextReplacementPage(): JSX.Element {
         sortOrder={sortOrder}
         availableTags={availableTags}
         selectedTags={selectedTags}
+        selectionMode={selectionMode}
+        selectedCount={selectedEntryIds.length}
         onSearchTermChange={setSearchTerm}
         onSortByChange={(value: SortBy) => setSortBy(value)}
         onSortOrderToggle={toggleSortOrder}
@@ -182,6 +220,11 @@ export default function TextReplacementPage(): JSX.Element {
         onTagToggle={toggleTagFilter}
         onClearTagFilters={clearTagFilters}
         onClearAll={handleClearAll}
+        onToggleSelectionMode={toggleSelectionMode}
+        onSelectAllVisible={selectAllVisibleEntries}
+        onClearSelection={clearSelection}
+        onDeleteSelected={handleDeleteSelected}
+        onAddTagToSelection={handleAddTagToSelection}
       />
 
       <div className="space-y-3">
@@ -207,8 +250,12 @@ export default function TextReplacementPage(): JSX.Element {
         <div className="flex-1 space-y-6">
           <TextReplacementTable
             entries={visibleEntries}
+            selectionMode={selectionMode}
+            selectedEntryIds={selectedEntryIds}
             onEdit={openEditDialog}
             onDelete={deleteEntry}
+            onToggleEntrySelection={handleEntrySelectionToggle}
+            onToggleSelectAll={handleToggleSelectAll}
           />
         </div>
         <HistoryPanel historyEntries={historyEntries} onUndo={undoHistory} />
