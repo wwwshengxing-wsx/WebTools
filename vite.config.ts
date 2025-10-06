@@ -6,7 +6,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type PluginOption } from 'vite';
 import { configDefaults } from 'vitest/config';
 
-const base = process.env.GITHUB_PAGES === 'true' ? '/TextReplacement/' : '/';
+const base = '/WebTools/';
+// const base = process.env.GITHUB_PAGES === 'true' ? '/TextReplacement/' : '/';
 const rootDir = process.cwd();
 
 function githubPagesSpaFallback(): PluginOption {
