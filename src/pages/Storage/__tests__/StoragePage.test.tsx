@@ -24,7 +24,9 @@ describe('StoragePage', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<StoragePage />);
 
-    const addFormHeading = screen.getByRole('heading', { name: /add new entry/i });
+    const addFormHeading = screen
+      .getAllByRole('heading', { name: /add new entry/i })
+      .slice(-1)[0];
     const addForm = addFormHeading.closest('form');
     if (!addForm) throw new Error('Add form not found');
 
@@ -60,7 +62,9 @@ describe('StoragePage', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<StoragePage />);
 
-    const addFormHeading = screen.getByRole('heading', { name: /add new entry/i });
+    const addFormHeading = screen
+      .getAllByRole('heading', { name: /add new entry/i })
+      .slice(-1)[0];
     const addForm = addFormHeading.closest('form');
     if (!addForm) throw new Error('Add form not found');
 
@@ -70,7 +74,9 @@ describe('StoragePage', () => {
 
     expect(await screen.findByText(/flag/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /clear all/i }));
+    await user.click(
+      screen.getAllByRole('button', { name: /clear all/i }).slice(-1)[0]
+    );
     expect(screen.queryByText(/flag/i)).not.toBeInTheDocument();
   });
 });

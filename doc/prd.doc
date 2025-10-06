@@ -1,0 +1,120 @@
+TextReplacement 页面需求与技术方案
+
+一、项目背景
+- 现有项目基于 Vite + React + TypeScript + React Router 构建，已在 `src/pages` 中提供示例页面与本地存储逻辑。
+- 目标是新增 TextReplacement 页面，提供对输入法短语 (shortcut/phrase) 的可视化管理、导入导出和编辑历史能力。
+
+二、产品目标
+- 为用户提供一个离线管理输入法短语的工具，支持解析项目内 `doc/demo.xml` 的 Apple Plist 模式，方便快速地批量导入、编辑、筛选和导出。
+- 通过本地浏览器 `localStorage` 持久化编辑，确保刷新不会丢失数据。
+- 支持查看编辑历史并快速撤回，保证修改可追溯。
+
+三、核心用户故事
+1. 我可以打开 TextReplacement 页面，看到 shortcut 与 phrase 的列表，并按 key/phrase 或最近更新时间排序。
+2. 我可以点击列表项进入编辑状态，修改内容并保存，保存后列表状态与本地存储同步更新。
+3. 我可以通过搜索框同时检索 shortcut 与 phrase，快速定位条目。
+4. 当我点击导入按钮并选择 XML 文件时，系统解析文件并对比现有列表，只展示新增或变更的条目供选择导入。
+5. 我完成编辑后，可以点击导出按钮，将当前列表导出为与 `doc/demo.xml` 同结构的 XML 并自动下载。
+6. 我可以在历史面板看到按时间排序的操作记录，并能对任一条记录执行撤回，恢复到对应快照。
+
+四、功能拆解
+- 数据展示：初次进入页面时读取本地存储，没有记录则展示空状态并提示导入或新增。
+- 排序：支持依据 `shortcut`、`phrase`、`更新时间` (最近优先) 三种排序模式；默认按更新时间倒序。
+- 编辑：列表行内或侧边面板编辑 shortcut、phrase；保存时更新更新时间并写入历史记录。
+- 搜索：输入任意字符串时，对 shortcut 与 phrase 进行模糊匹配 (大小写不敏感)。
+- 导入：文件选择后解析 XML → 对比当前数据 → 高亮新增或更新的项 → 用户勾选后合并入列表。
+- 导出：根据当前列表生成 plist XML 字符串，下载为 `TextReplacement_export.xml`。
+- 历史：记录新增、修改、删除、批量导入等事件，展示操作类型、时间、差异摘要；支持撤回到任意历史状态。
+- 错误处理：解析失败或导出异常时提示用户，并保留原数据。
+
+五、交互流程 (概要)
+1. 页面加载：拉取 localStorage → 初始化状态 → 空数据展示 CTA (导入或新增)。
+2. 新增/编辑：弹出表单 → 输入校验 (shortcut、phrase 不可同时为空，shortcut 去重) → 保存 → 更新列表、历史、存储。
+3. 导入：点击按钮 → `<input type="file">` 选择 `.xml` → FileReader → 解析 → 过滤新增/冲突项 → 列表内勾选 → 确认导入 → 写入数据 & 历史。
+4. 导出：点击按钮 → 序列化当前数据 → 触发浏览器下载。
+5. 历史：侧边栏/抽屉展示 → 点击记录显示详情 → 撤回将当前状态替换为记录快照，并追加一条“撤回”历史。
+
+六、数据模型规划
+- `TextReplacementEntry`: `{ id: string; shortcut: string; phrase: string; updatedAt: string; createdAt: string; source: 'manual' | 'import'; }`
+- `HistoryEntry`: `{ id: string; type: 'create' | 'update' | 'delete' | 'import' | 'undo'; timestamp: string; payload: { before?: TextReplacementEntry[]; after?: TextReplacementEntry[]; summary: string; } }`
+- 排序与搜索状态：`sortBy` (enum)、`sortOrder`、`searchTerm`。
+- 导入临时状态：`importPreviewList`、`importSelection`。
+
+七、状态与存储方案
+- 在 `src/pages/TextReplacement/hooks` 下实现 `useTextReplacementEntries`，封装：
+  - 列表状态、排序、搜索、历史、导入缓存。
+  - 本地存储 Key 建议为 `app.textReplacement.entries`，历史记录 Key 为 `app.textReplacement.history`。
+  - 启动时读取 localStorage，解析失败时回退到默认空数组。
+  - 每次列表或历史更新时同步写入 localStorage (可考虑 debounced 写入防抖)。
+- 历史撤回：保存完整快照或增量差异；撤回时替换当前 entries 并同步存储。
+
+八、组件划分 (位于 `src/pages/TextReplacement`)
+- `index.tsx`: 页面容器，集成路由入口与布局 (继承现有 App 布局模式)。
+- `components/TextReplacementToolbar.tsx`: 包含搜索框、排序控件、导入/导出按钮。
+- `components/TextReplacementTable.tsx`: 展示列表，支持行内编辑、选择。
+- `components/EditDialog.tsx`: 弹窗表单，处理新增与更新。
+- `components/ImportPreviewDrawer.tsx`: 展示导入文件差异，支持勾选与确认。
+- `components/HistoryPanel.tsx`: 展示历史记录与撤回按钮。
+- `hooks/useTextReplacementEntries.ts`: 响应式状态管理与业务逻辑封装。
+- 样式可直接使用 Tailwind 或局部 CSS Modules，与页面文件同级。
+
+九、XML 解析与序列化策略
+- 读取：使用浏览器内置 `DOMParser` 将字符串解析为 XML → 定位 `<array>` 下 `<dict>` → 提取 `<key>` + `<string>` 对 → 构造 `TextReplacementEntry`。
+- 校验：
+  - 忽略缺少 `shortcut` 或 `phrase` 的条目。
+  - 去重策略：以 `shortcut` 为唯一键，导入时覆盖或提示冲突。
+- 序列化：构建 XML 字符串，保持 `<plist>` 与 `<array>` 结构，与 `doc/demo.xml` 一致，统一使用 UTF-8。
+- 下载：通过 `Blob` + `URL.createObjectURL` + 临时 `<a>` 节点触发浏览器下载。
+
+十、导入差异对比逻辑
+- 比较现有 `entries` 与导入文件：
+  - 新条目：`shortcut` 在现有数据中不存在。
+  - 更新条目：`shortcut` 存在但 `phrase` 有变化。
+- `ImportPreviewDrawer` 中分组显示新增与更新，默认全选；用户可取消勾选。
+- 确认导入后：批量更新/新增对应条目，写入 `source: 'import'`，并记录单条历史 (含导入数量与来源文件名)。
+
+十一、搜索与排序实现要点
+- 搜索：使用 `useMemo` 对 `entries` 进行过滤，`searchTerm` 正则或 `toLowerCase()` 比较。
+- 排序：提供排序菜单 (更新时间、shortcut、phrase)；对字符串排序需调用 `.localeCompare()`，对时间使用 `dayjs` 等轻量库或原生比较。
+- 排序结果、搜索结果链式应用，最终传递给展示组件。
+
+十二、编辑历史与撤回
+- 每次用户操作 (新增、编辑、删除、导入、撤回) 生成历史记录，包含快照和摘要。
+- 历史列表按照 `timestamp` 倒序显示；显示内容包含操作类型、影响条目数量、简要描述。
+- 撤回操作将当前状态替换为历史记录中的 `before` 或 `after` 快照：
+  - 对于 `undo` 以外的历史项，撤回后生成一条新的 `undo` 历史说明回退动作。
+  - 可设置历史上限 (如 50 条)，超出时从最旧开始清理，保证本地存储占用稳定。
+
+十三、路由与导航集成
+- 在 `src/router.tsx` 中新增 `{ path: 'text-replacement', element: <TextReplacementPage /> }`。
+- 如果主页或导航组件有菜单，需要添加入口链接 (保持与现有页面一致的导航体验)。
+
+十四、错误与空状态处理
+- 空数据：展示插画/提示文本 + 导入按钮。
+- 解析失败：显示错误提示 (如“文件格式错误或内容为空”)，并保留原列表。
+- 导出失败：捕获异常并提示用户重试。
+- LocalStorage 超限异常：提示用户清理浏览器或减少条目。
+
+十五、性能与技术风险
+- DOMParser 处理大型 XML 文件可能耗时；需使用 `useTransition` 或 loading 状态提示。
+- 本地存储存在容量限制 (~5MB)，需提示用户。
+- 兼容性：主要面向现代 Chromium/Firefox/Safari；IE 不在支持范围。
+
+十六、测试计划
+- 单元测试 (Vitest + Testing Library)：
+  - `useTextReplacementEntries`：初始加载、增删改、导入合并、撤回逻辑。
+  - 组件测试：
+    - `TextReplacementTable` 渲染、排序、行内编辑交互。
+    - `ImportPreviewDrawer` 选择与确认。
+    - `HistoryPanel` 撤回操作正确更新列表。
+- 端到端测试 (Playwright)：
+  - 导入文件流程：上传示例 XML → 选择部分条目 → 确认导入 → 验证列表刷新。
+  - 编辑并导出：修改条目 → 导出 → 校验下载文件内容 (可通过拦截下载请求或检查 Blob 输出)。
+- 性能校验：导入包含 100+ 条数据时页面交互保持流畅 (可在测试中模拟)。
+
+十七、交付与后续
+- 交付完成需通过 `npm run lint`, `npm run test`, `npm run build`。
+- 后续可扩展项：
+  - 支持从 JSON/CSV 导入。
+  - 支持快捷键批量编辑。
+  - 与远端同步 (后端接口) 的可能性评估。

@@ -17,6 +17,7 @@ export default function App(): JSX.Element {
             { label: 'Overview', to: '/' },
             { label: 'Counter', to: '/counter' },
             { label: 'Storage', to: '/storage' },
+            { label: 'Text Replacement', to: '/text-replacement' },
           ].map(({ label, to }) => (
             <NavLink
               key={label}

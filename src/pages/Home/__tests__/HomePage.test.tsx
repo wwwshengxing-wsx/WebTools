@@ -15,13 +15,16 @@ describe('HomePage directory', () => {
       screen.getByRole('heading', { name: /feature directory/i })
     ).toBeInTheDocument();
 
-    expect(screen.getByRole('link', { name: /^counter$/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^counter\b/i })).toHaveAttribute(
       'href',
       '/counter'
     );
-    expect(screen.getByRole('link', { name: /^storage$/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^storage\b/i })).toHaveAttribute(
       'href',
       '/storage'
     );
+    expect(
+      screen.getByRole('link', { name: /^text replacement\b/i })
+    ).toHaveAttribute('href', '/text-replacement');
   });
 });

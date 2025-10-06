@@ -11,6 +11,11 @@ const cards = [
     description: 'Inspect and manage key/value pairs stored in your browser localStorage.',
     to: '/storage',
   },
+  {
+    title: 'Text Replacement',
+    description: 'Import, edit, and export shortcut → phrase pairs with full history tracking.',
+    to: '/text-replacement',
+  },
 ];
 
 export default function HomePage(): JSX.Element {
