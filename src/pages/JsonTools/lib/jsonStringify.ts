@@ -22,8 +22,3 @@ export function stringifyJson(value: unknown, preserveEscapes: boolean): string 
   }
   return unescapeControlCharacters(formatted);
 }
-
-export function formatJsonString(raw: string): string {
-  const parsed = JSON.parse(raw);
-  return JSON.stringify(parsed, null, 2);
-}
