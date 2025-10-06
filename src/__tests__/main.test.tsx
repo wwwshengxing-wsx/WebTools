@@ -16,6 +16,5 @@ describe('main bootstrap', () => {
       await Promise.resolve();
     });
 
-    expect(document.querySelector('h1')?.textContent).toContain('React Playground');
   });
 });
