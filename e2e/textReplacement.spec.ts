@@ -1,4 +1,4 @@
-import { Buffer } from 'node:buffer';
+import type { Readable } from 'stream';
 import { expect, test } from '@playwright/test';
 
 const plistFixture = `<?xml version="1.0" encoding="UTF-8"?>
@@ -19,6 +19,34 @@ const plistFixture = `<?xml version="1.0" encoding="UTF-8"?>
   </dict>
 </array>
 </plist>`;
+
+async function readStreamAsUtf8(stream: Readable): Promise<string> {
+  const decoder = new TextDecoder();
+  let result = '';
+
+  for await (const chunk of stream as AsyncIterable<Uint8Array | string>) {
+    if (typeof chunk === 'string') {
+      result += chunk;
+    } else if (chunk instanceof Uint8Array) {
+      result += decoder.decode(chunk, { stream: true });
+    } else {
+      throw new Error('Unexpected stream chunk type');
+    }
+  }
+
+  return result + decoder.decode();
+}
+
+function assertReadableStream(value: unknown): asserts value is Readable {
+  if (value == null || typeof value !== 'object') {
+    throw new Error('Expected a readable stream');
+  }
+
+  const candidate = value as AsyncIterable<unknown>;
+  if (typeof candidate[Symbol.asyncIterator] !== 'function') {
+    throw new Error('Expected a readable stream');
+  }
+}
 
 test('text replacement workflow with import, history, and export', async ({ page }) => {
   await page.goto('/');
@@ -48,7 +76,7 @@ test('text replacement workflow with import, history, and export', async ({ page
   await importInput.setInputFiles({
     name: 'import.xml',
     mimeType: 'text/xml',
-    buffer: Buffer.from(plistFixture, 'utf-8'),
+    buffer: plistFixture,
   });
 
   await expect(page.getByRole('heading', { name: 'Import preview' })).toBeVisible();
@@ -73,17 +101,10 @@ test('text replacement workflow with import, history, and export', async ({ page
 
   expect(download.suggestedFilename()).toBe('TextReplacement_export.xml');
 
-  const stream = await download.createReadStream();
-  if (stream) {
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-    const xmlContent = Buffer.concat(chunks).toString('utf-8');
-    expect(xmlContent).toContain('<string>alpha</string>');
-    expect(xmlContent).not.toContain('gamma');
-  } else {
-    const path = await download.path();
-    expect(path).toBeTruthy();
-  }
+  const streamResult: unknown = await download.createReadStream();
+  assertReadableStream(streamResult);
+
+  const xmlContent = await readStreamAsUtf8(streamResult);
+  expect(xmlContent).toContain('<string>alpha</string>');
+  expect(xmlContent).not.toContain('gamma');
 });

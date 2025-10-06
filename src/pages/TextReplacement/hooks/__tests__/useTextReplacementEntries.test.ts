@@ -24,7 +24,10 @@ describe('useTextReplacementEntries', () => {
 
     expect(result.current.historyEntries[0]?.type).toBe('create');
 
-    const entryId = result.current.entries[0]?.id as string;
+    const entryId = result.current.entries[0]?.id;
+    if (!entryId) {
+      throw new Error('Expected entry id to exist');
+    }
 
     act(() => {
       result.current.saveEntry({ id: entryId, shortcut: 'greet', phrase: 'Hi there' });
@@ -96,7 +99,10 @@ describe('useTextReplacementEntries', () => {
       expect(result.current.entries).toHaveLength(2);
     });
 
-    const targetHistoryId = result.current.historyEntries[0]?.id as string;
+    const targetHistoryId = result.current.historyEntries[0]?.id;
+    if (!targetHistoryId) {
+      throw new Error('Expected history entry id to exist');
+    }
 
     act(() => {
       result.current.undoHistory(targetHistoryId);

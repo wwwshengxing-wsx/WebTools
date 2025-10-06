@@ -68,20 +68,24 @@ export default function TextReplacementPage(): JSX.Element {
   };
 
   const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const input = event.target;
+      const file = input.files?.[0];
       if (!file) return;
-      try {
-        const text = await file.text();
-        const parsed = parseTextReplacementXml(text);
-        prepareImportPreview(parsed, file.name);
-        setImportError('');
-      } catch (error) {
-        console.warn('Failed to import xml file', error);
-        setImportError('Failed to parse XML file. Ensure it matches the expected plist format.');
-      } finally {
-        event.target.value = '';
-      }
+
+      void (async () => {
+        try {
+          const text = await file.text();
+          const parsed = parseTextReplacementXml(text);
+          prepareImportPreview(parsed, file.name);
+          setImportError('');
+        } catch (error) {
+          console.warn('Failed to import xml file', error);
+          setImportError('Failed to parse XML file. Ensure it matches the expected plist format.');
+        } finally {
+          input.value = '';
+        }
+      })();
     },
     [prepareImportPreview]
   );

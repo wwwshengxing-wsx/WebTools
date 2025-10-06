@@ -8,6 +8,7 @@
     "src/**/*.tsx",
     "e2e/**/*.ts",
     "vite.config.ts",
+    "vite.config.d.ts",
     "playwright.config.ts",
     "tailwind.config.js",
     "postcss.config.js"

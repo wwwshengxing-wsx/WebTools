@@ -32,7 +32,7 @@ export default function HistoryPanel(props: HistoryPanelProps): JSX.Element {
           historyEntries.map((entry) => (
             <li
               key={entry.id}
-              className="rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-4 text-sm text-slate-200"
+              className="rounded-2xl border border-slate-700/70 bg-slate-950/40 p-4 text-sm text-slate-200"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>

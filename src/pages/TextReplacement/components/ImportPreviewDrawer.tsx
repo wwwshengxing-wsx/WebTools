@@ -20,7 +20,7 @@ export default function ImportPreviewDrawer(
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-slate-950/70">
-      <aside className="flex h-full w-full max-w-xl flex-col gap-6 border-l border-slate-700/70 bg-slate-900/95 px-6 py-8 shadow-2xl">
+      <aside className="flex size-full max-w-xl flex-col gap-6 border-l border-slate-700/70 bg-slate-900/95 px-6 py-8 shadow-2xl">
         <header className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-semibold text-slate-100">Import preview</h3>
@@ -47,7 +47,7 @@ export default function ImportPreviewDrawer(
                   type="checkbox"
                   checked={allSelected}
                   onChange={(event) => onSelectAll(event.target.checked)}
-                  className="h-4 w-4 rounded border border-slate-500 bg-slate-800 accent-sky-400"
+                  className="size-4 rounded border border-slate-500 bg-slate-800 accent-sky-400"
                 />
                 Select all
               </label>
@@ -67,7 +67,7 @@ export default function ImportPreviewDrawer(
                       type="checkbox"
                       checked={item.selected}
                       onChange={() => onToggleItem(item.id)}
-                      className="mt-1 h-4 w-4 rounded border border-slate-500 bg-slate-800 accent-sky-400"
+                      className="mt-1 size-4 rounded border border-slate-500 bg-slate-800 accent-sky-400"
                     />
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
