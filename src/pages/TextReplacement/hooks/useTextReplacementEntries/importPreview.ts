@@ -6,7 +6,7 @@ import {
   type ImportPreviewState,
   type TextReplacementEntry,
 } from './types';
-import { cloneEntries, generateId } from './utils';
+import { areTagsEqual, cloneEntries, generateId, normalizeTags } from './utils';
 import { createHistoryEntry } from './history';
 
 export interface ImportPreviewDependencies {
@@ -37,6 +37,7 @@ export function createImportPreviewActions({
       const shortcut = item.shortcut.trim();
       const phrase = item.phrase.trim();
       if (!shortcut && !phrase) return;
+      const tags = normalizeTags(item.tags ?? []);
 
       const existing = existingByShortcut.get(shortcut);
       if (!existing) {
@@ -44,17 +45,19 @@ export function createImportPreviewActions({
           id: `new:${generateId()}`,
           shortcut,
           phrase,
+          tags,
           status: 'new',
           selected: true,
         });
         return;
       }
 
-      if (existing.phrase !== phrase) {
+      if (existing.phrase !== phrase || !areTagsEqual(existing.tags, tags)) {
         nextItems.push({
           id: `update:${existing.id}`,
           shortcut,
           phrase,
+          tags,
           status: 'update',
           existingEntryId: existing.id,
           selected: true,
@@ -105,11 +108,13 @@ export function createImportPreviewActions({
         let changed = false;
 
         selectedItems.forEach((item) => {
+          const normalizedTags = normalizeTags(item.tags ?? []);
           if (item.status === 'new') {
             const newEntry: TextReplacementEntry = {
               id: generateId(),
               shortcut: item.shortcut,
               phrase: item.phrase,
+              tags: normalizedTags,
               createdAt: now,
               updatedAt: now,
               source: 'import',
@@ -122,6 +127,7 @@ export function createImportPreviewActions({
                 ? {
                     ...entry,
                     phrase: item.phrase,
+                    tags: normalizedTags,
                     updatedAt: now,
                     source: entry.source === 'manual' ? 'manual' : 'import',
                   }

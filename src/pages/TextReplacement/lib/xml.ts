@@ -4,6 +4,7 @@ const PLIST_FOOTER = '</plist>\n';
 export interface ParsedTextReplacementItem {
   shortcut: string;
   phrase: string;
+  tags: string[];
 }
 
 function escapeXml(value: string): string {
@@ -35,23 +36,32 @@ export function parseTextReplacementXml(xmlText: string): ParsedTextReplacementI
     const children = Array.from(dict.children);
     let phrase = '';
     let shortcut = '';
+    const tags: string[] = [];
 
     for (let index = 0; index < children.length; index += 1) {
       const keyNode = children[index];
       const nextNode = children[index + 1];
-      if (!keyNode || keyNode.tagName !== 'key' || !nextNode || nextNode.tagName !== 'string') {
+      if (!keyNode || keyNode.tagName !== 'key' || !nextNode) {
         continue;
       }
 
       const keyName = keyNode.textContent?.trim();
-      const value = nextNode.textContent ?? '';
+      if (!keyName) continue;
 
-      if (keyName === 'phrase') {
-        phrase = value;
+      if (keyName === 'phrase' && nextNode.tagName === 'string') {
+        phrase = nextNode.textContent ?? '';
       }
 
-      if (keyName === 'shortcut') {
-        shortcut = value;
+      if (keyName === 'shortcut' && nextNode.tagName === 'string') {
+        shortcut = nextNode.textContent ?? '';
+      }
+
+      if (keyName === 'tags' && nextNode.tagName === 'array') {
+        const tagValues = Array.from(nextNode.querySelectorAll('string'));
+        tagValues.forEach((node) => {
+          const value = node.textContent?.trim();
+          if (value) tags.push(value);
+        });
       }
     }
 
@@ -59,6 +69,7 @@ export function parseTextReplacementXml(xmlText: string): ParsedTextReplacementI
       items.push({
         shortcut: shortcut.trim(),
         phrase: phrase.trim(),
+        tags,
       });
     }
   });
@@ -71,7 +82,12 @@ export function serializeTextReplacementItems(items: ParsedTextReplacementItem[]
     .map((item) => {
       const phrase = escapeXml(item.phrase);
       const shortcut = escapeXml(item.shortcut);
-      return `\t<dict>\n\t\t<key>phrase</key>\n\t\t<string>${phrase}</string>\n\t\t<key>shortcut</key>\n\t\t<string>${shortcut}</string>\n\t</dict>`;
+      const tagSection = (item.tags ?? []).length
+        ? `\n\t\t<key>tags</key>\n\t\t<array>\n${item.tags
+            .map((tag) => `\t\t\t<string>${escapeXml(tag)}</string>`)
+            .join('\n')}\n\t\t</array>`
+        : '';
+      return `\t<dict>\n\t\t<key>phrase</key>\n\t\t<string>${phrase}</string>\n\t\t<key>shortcut</key>\n\t\t<string>${shortcut}</string>${tagSection}\n\t</dict>`;
     })
     .join('\n');
 

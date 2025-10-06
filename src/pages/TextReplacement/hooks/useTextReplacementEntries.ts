@@ -14,11 +14,14 @@ import {
   persistHistory,
   readEntriesFromStorage,
   readHistoryFromStorage,
+  clearStoredData,
 } from './useTextReplacementEntries/storage';
 import {
   areEntryListsEqual,
   cloneEntries,
   generateId,
+  normalizeTags,
+  areTagsEqual,
 } from './useTextReplacementEntries/utils';
 import { appendHistoryEntry, createHistoryEntry } from './useTextReplacementEntries/history';
 import {
@@ -47,6 +50,7 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
   const [sortBy, setSortByState] = useState<SortBy>('updatedAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTags, setSelectedTagsState] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<ImportPreviewState | null>(null);
   const [comparisonPreview, setComparisonPreview] = useState<ComparisonPreviewState | null>(null);
 
@@ -83,13 +87,47 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   }, []);
 
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    entries.forEach((entry) => {
+      entry.tags.forEach((tag) => {
+        if (tag.trim()) tagSet.add(tag);
+      });
+    });
+    return Array.from(tagSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [entries]);
+
+  useEffect(() => {
+    setSelectedTagsState((prev) => prev.filter((tag) => availableTags.includes(tag)));
+  }, [availableTags]);
+
+  const setSelectedTags = useCallback((tags: string[]) => {
+    setSelectedTagsState(normalizeTags(tags));
+  }, []);
+
+  const toggleTagFilter = useCallback((tag: string) => {
+    setSelectedTagsState((prev) => (prev.includes(tag) ? prev.filter((value) => value !== tag) : [...prev, tag]));
+  }, []);
+
+  const clearTagFilters = useCallback(() => {
+    setSelectedTagsState([]);
+  }, []);
+
   const visibleEntries = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    const tagFilterActive = selectedTags.length > 0;
+
     const filtered = entries.filter((entry) => {
-      if (!searchTerm.trim()) return true;
-      const term = searchTerm.trim().toLowerCase();
+      if (tagFilterActive && !selectedTags.every((tag) => entry.tags.includes(tag))) {
+        return false;
+      }
+
+      if (!term) return true;
+
       return (
         entry.shortcut.toLowerCase().includes(term) ||
-        entry.phrase.toLowerCase().includes(term)
+        entry.phrase.toLowerCase().includes(term) ||
+        entry.tags.some((tag) => tag.toLowerCase().includes(term))
       );
     });
 
@@ -104,7 +142,7 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     });
 
     return sortOrder === 'desc' ? sorted.reverse() : sorted;
-  }, [entries, searchTerm, sortBy, sortOrder]);
+  }, [entries, searchTerm, selectedTags, sortBy, sortOrder]);
 
   const appendHistory = useCallback(
     (record: HistoryEntry | null) => {
@@ -114,9 +152,11 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
   );
 
   const saveEntry = useCallback(
-    (input: { id?: string; shortcut: string; phrase: string }) => {
+    (input: { id?: string; shortcut: string; phrase: string; tags: string[] }) => {
       const trimmedShortcut = input.shortcut.trim();
       const trimmedPhrase = input.phrase.trim();
+      const normalizedTags = normalizeTags(input.tags ?? []);
+
       if (!trimmedShortcut && !trimmedPhrase) {
         return;
       }
@@ -136,7 +176,8 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
           const existing = prev[index];
           if (
             existing.shortcut === trimmedShortcut &&
-            existing.phrase === trimmedPhrase
+            existing.phrase === trimmedPhrase &&
+            areTagsEqual(existing.tags, normalizedTags)
           ) {
             return prev;
           }
@@ -147,6 +188,7 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
                   ...entry,
                   shortcut: trimmedShortcut,
                   phrase: trimmedPhrase,
+                  tags: normalizedTags,
                   updatedAt: now,
                 }
               : entry
@@ -166,6 +208,7 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
                 ? {
                     ...entry,
                     phrase: trimmedPhrase,
+                    tags: normalizedTags,
                     updatedAt: now,
                   }
                 : entry
@@ -182,6 +225,7 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
               id: generateId(),
               shortcut: trimmedShortcut,
               phrase: trimmedPhrase,
+              tags: normalizedTags,
               source: 'manual',
               createdAt: now,
               updatedAt: now,
@@ -298,8 +342,23 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
       .map((entry) => ({
         shortcut: entry.shortcut,
         phrase: entry.phrase,
+        tags: entry.tags ?? [],
       }));
     return serializeTextReplacementItems(items);
+  }, []);
+
+  const clearAllEntries = useCallback(() => {
+    setEntries([]);
+    setHistoryEntries([]);
+    setImportPreview(null);
+    setComparisonPreview(null);
+    setSearchTerm('');
+    entriesRef.current = [];
+    historyRef.current = [];
+    comparisonFileEntriesRef.current = [];
+    comparisonPreviewRef.current = null;
+    setSelectedTagsState([]);
+    clearStoredData();
   }, []);
 
   return {
@@ -308,12 +367,17 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     sortBy,
     sortOrder,
     searchTerm,
+    availableTags,
+    selectedTags,
     historyEntries,
     importPreview,
     comparisonPreview,
     setSearchTerm,
     setSortBy,
     toggleSortOrder,
+    setSelectedTags,
+    toggleTagFilter,
+    clearTagFilters,
     saveEntry,
     deleteEntry,
     prepareImportPreview,
@@ -323,6 +387,7 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     cancelImportPreview,
     undoHistory,
     exportEntriesAsXml,
+    clearAllEntries,
     prepareComparisonPreview,
     closeComparisonPreview,
     addComparisonEntry,

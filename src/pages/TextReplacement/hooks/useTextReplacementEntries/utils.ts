@@ -13,7 +13,21 @@ export function generateId(): string {
 }
 
 export function cloneEntries(entries: TextReplacementEntry[]): TextReplacementEntry[] {
-  return entries.map((entry) => ({ ...entry }));
+  return entries.map((entry) => ({
+    ...entry,
+    tags: [...(entry.tags ?? [])],
+  }));
+}
+
+export function normalizeTags(tags: string[]): string[] {
+  return Array.from(new Set(tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)));
+}
+
+export function areTagsEqual(first: string[], second: string[]): boolean {
+  if (first.length !== second.length) return false;
+  const sortedA = [...first].sort();
+  const sortedB = [...second].sort();
+  return sortedA.every((value, index) => value === sortedB[index]);
 }
 
 export function areEntryListsEqual(

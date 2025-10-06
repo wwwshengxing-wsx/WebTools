@@ -15,7 +15,7 @@ describe('useTextReplacementEntries', () => {
     const { result } = renderHook(() => useTextReplacementEntries());
 
     act(() => {
-      result.current.saveEntry({ shortcut: 'greet', phrase: 'Hello world' });
+      result.current.saveEntry({ shortcut: 'greet', phrase: 'Hello world', tags: ['salutation'] });
     });
 
     await waitFor(() => {
@@ -30,7 +30,7 @@ describe('useTextReplacementEntries', () => {
     }
 
     act(() => {
-      result.current.saveEntry({ id: entryId, shortcut: 'greet', phrase: 'Hi there' });
+      result.current.saveEntry({ id: entryId, shortcut: 'greet', phrase: 'Hi there', tags: ['updated'] });
     });
 
     await waitFor(() => {
@@ -38,13 +38,14 @@ describe('useTextReplacementEntries', () => {
     });
 
     expect(result.current.historyEntries[0]?.type).toBe('update');
+    expect(result.current.entries[0]?.tags).toEqual(['updated']);
   });
 
   it('prepares import preview and merges selected entries', async () => {
     const { result } = renderHook(() => useTextReplacementEntries());
 
     act(() => {
-      result.current.saveEntry({ shortcut: 'base', phrase: 'Original' });
+      result.current.saveEntry({ shortcut: 'base', phrase: 'Original', tags: [] });
     });
 
     await waitFor(() => {
@@ -54,8 +55,8 @@ describe('useTextReplacementEntries', () => {
     act(() => {
       result.current.prepareImportPreview(
         [
-          { shortcut: 'base', phrase: 'Updated phrase' },
-          { shortcut: 'extra', phrase: 'Additional' },
+          { shortcut: 'base', phrase: 'Updated phrase', tags: ['existing'] },
+          { shortcut: 'extra', phrase: 'Additional', tags: ['new'] },
         ],
         'demo.xml'
       );
@@ -75,7 +76,9 @@ describe('useTextReplacementEntries', () => {
     const created = result.current.entries.find((entry) => entry.shortcut === 'extra');
 
     expect(updated?.phrase).toBe('Updated phrase');
+    expect(updated?.tags).toEqual(['existing']);
     expect(created?.phrase).toBe('Additional');
+    expect(created?.tags).toEqual(['new']);
     expect(result.current.historyEntries[0]?.type).toBe('import');
     expect(result.current.importPreview).toBeNull();
   });
@@ -84,7 +87,7 @@ describe('useTextReplacementEntries', () => {
     const { result } = renderHook(() => useTextReplacementEntries());
 
     act(() => {
-      result.current.saveEntry({ shortcut: 'undo-me', phrase: 'Initial' });
+      result.current.saveEntry({ shortcut: 'undo-me', phrase: 'Initial', tags: [] });
     });
 
     await waitFor(() => {
@@ -92,7 +95,7 @@ describe('useTextReplacementEntries', () => {
     });
 
     act(() => {
-      result.current.saveEntry({ shortcut: 'another', phrase: 'Second' });
+      result.current.saveEntry({ shortcut: 'another', phrase: 'Second', tags: [] });
     });
 
     await waitFor(() => {

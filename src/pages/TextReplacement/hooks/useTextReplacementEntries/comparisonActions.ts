@@ -7,7 +7,7 @@ import {
   sanitizeComparisonFileEntries,
   updateComparisonState,
 } from './comparison';
-import { cloneEntries, generateId } from './utils';
+import { cloneEntries, generateId, normalizeTags } from './utils';
 import { createHistoryEntry } from './history';
 import type {
   ComparisonPreviewState,
@@ -68,6 +68,7 @@ export function createComparisonActions({
         id: generateId(),
         shortcut: fileEntry.shortcut,
         phrase: fileEntry.phrase,
+        tags: normalizeTags(fileEntry.tags ?? []),
         createdAt: now,
         updatedAt: now,
         source: 'import',
@@ -109,11 +110,13 @@ export function createComparisonActions({
 
       const before = cloneEntries(prevEntries);
       const now = new Date().toISOString();
+      const normalizedTags = normalizeTags(fileEntry.tags ?? []);
       const nextEntries = prevEntries.map((entry) =>
         entry.id === target.id
           ? {
               ...entry,
               phrase: fileEntry.phrase,
+              tags: normalizedTags,
               updatedAt: now,
             }
           : entry

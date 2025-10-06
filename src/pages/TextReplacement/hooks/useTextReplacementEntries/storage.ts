@@ -20,6 +20,9 @@ export function readEntriesFromStorage(): TextReplacementEntry[] {
         ...item,
         shortcut: item.shortcut ?? '',
         phrase: item.phrase ?? '',
+        tags: Array.isArray((item as Partial<TextReplacementEntry>).tags)
+          ? ((item as Partial<TextReplacementEntry>).tags ?? []).map((tag) => String(tag).trim()).filter(Boolean)
+          : [],
       }));
   } catch (error) {
     console.warn('Failed to read text replacement entries', error);
@@ -40,8 +43,14 @@ export function readHistoryFromStorage(): HistoryEntry[] {
       .slice(0, HISTORY_LIMIT)
       .map((item) => ({
         ...item,
-        before: item.before.map((entry) => ({ ...entry })),
-        after: item.after.map((entry) => ({ ...entry })),
+        before: item.before.map((entry) => ({
+          ...entry,
+          tags: Array.isArray(entry.tags) ? entry.tags : [],
+        })),
+        after: item.after.map((entry) => ({
+          ...entry,
+          tags: Array.isArray(entry.tags) ? entry.tags : [],
+        })),
       }));
   } catch (error) {
     console.warn('Failed to read text replacement history', error);
@@ -64,5 +73,15 @@ export function persistHistory(history: HistoryEntry[]): void {
     window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
   } catch (error) {
     console.warn('Failed to persist text replacement history', error);
+  }
+}
+
+export function clearStoredData(): void {
+  if (!isClient()) return;
+  try {
+    window.localStorage.removeItem(ENTRIES_STORAGE_KEY);
+    window.localStorage.removeItem(HISTORY_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear stored text replacement data', error);
   }
 }

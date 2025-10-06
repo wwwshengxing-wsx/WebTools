@@ -129,16 +129,18 @@ export default function ComparisonDrawer(props: ComparisonDrawerProps): JSX.Elem
             {comparison.items
               .filter((item) => item.status !== 'identical')
               .map((item) => {
-               const status = statusStyles[item.status];
-               const filePhrase = item.fileEntry ? renderPhrase(item.fileEntry.phrase) : 'Not present in file';
-               const currentPhrase = item.currentEntry
-                 ? renderPhrase(item.currentEntry.phrase)
-                 : 'Not present locally';
+                const status = statusStyles[item.status];
+                const filePhrase = item.fileEntry ? renderPhrase(item.fileEntry.phrase) : 'Not present in file';
+                const currentPhrase = item.currentEntry
+                  ? renderPhrase(item.currentEntry.phrase)
+                  : 'Not present locally';
+                const fileTags = item.fileEntry?.tags ?? [];
+                const currentTags = item.currentEntry?.tags ?? [];
 
-              return (
-                <li
-                  key={item.id}
-                  className="rounded-2xl border border-slate-700/70 bg-slate-950/50 p-4 text-sm text-slate-200"
+                return (
+                  <li
+                    key={item.id}
+                    className="rounded-2xl border border-slate-700/70 bg-slate-950/50 p-4 text-sm text-slate-200"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -157,10 +159,38 @@ export default function ComparisonDrawer(props: ComparisonDrawerProps): JSX.Elem
                     <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">File</p>
                       <p className="mt-2 text-sm text-slate-200">{filePhrase}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                        {fileTags.length === 0 ? (
+                          <span className="text-slate-500">No tags</span>
+                        ) : (
+                          fileTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center rounded-full bg-violet-500/20 px-2 py-0.5 text-xs font-semibold text-violet-200"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </div>
                     <div className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Current</p>
                       <p className="mt-2 text-sm text-slate-200">{currentPhrase}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                        {currentTags.length === 0 ? (
+                          <span className="text-slate-500">No tags</span>
+                        ) : (
+                          currentTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center rounded-full bg-slate-500/30 px-2 py-0.5 text-xs font-semibold text-slate-100"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </div>
                   </div>
                 </li>

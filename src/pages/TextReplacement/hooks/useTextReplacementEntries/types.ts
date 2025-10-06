@@ -9,6 +9,7 @@ export interface TextReplacementEntry {
   id: string;
   shortcut: string;
   phrase: string;
+  tags: string[];
   createdAt: string;
   updatedAt: string;
   source: 'manual' | 'import';
@@ -27,6 +28,7 @@ export interface ImportPreviewItem {
   id: string;
   shortcut: string;
   phrase: string;
+  tags: string[];
   status: 'new' | 'update';
   existingEntryId?: string;
   selected: boolean;
@@ -47,6 +49,7 @@ export interface ComparisonItem {
   fileEntry: {
     shortcut: string;
     phrase: string;
+    tags: string[];
   } | null;
 }
 
@@ -62,13 +65,18 @@ export interface UseTextReplacementEntriesResult {
   sortBy: SortBy;
   sortOrder: SortOrder;
   searchTerm: string;
+  availableTags: string[];
+  selectedTags: string[];
   historyEntries: HistoryEntry[];
   importPreview: ImportPreviewState | null;
   comparisonPreview: ComparisonPreviewState | null;
   setSearchTerm: (value: string) => void;
   setSortBy: (sortBy: SortBy) => void;
   toggleSortOrder: () => void;
-  saveEntry: (input: { id?: string; shortcut: string; phrase: string }) => void;
+  setSelectedTags: (tags: string[]) => void;
+  toggleTagFilter: (tag: string) => void;
+  clearTagFilters: () => void;
+  saveEntry: (input: { id?: string; shortcut: string; phrase: string; tags: string[] }) => void;
   deleteEntry: (id: string) => void;
   prepareImportPreview: (items: ParsedTextReplacementItem[], fileName: string) => void;
   toggleImportSelection: (id: string) => void;
@@ -77,6 +85,7 @@ export interface UseTextReplacementEntriesResult {
   cancelImportPreview: () => void;
   undoHistory: (historyEntryId: string) => void;
   exportEntriesAsXml: () => string;
+  clearAllEntries: () => void;
   prepareComparisonPreview: (items: ParsedTextReplacementItem[], fileName: string) => void;
   closeComparisonPreview: () => void;
   addComparisonEntry: (shortcut: string) => void;

@@ -5,10 +5,12 @@ import type {
   TextReplacementEntry,
 } from './types';
 import type { ParsedTextReplacementItem } from '../../lib/xml';
+import { areTagsEqual, normalizeTags } from './utils';
 
 export interface ComparisonFileEntry {
   shortcut: string;
   phrase: string;
+  tags: string[];
 }
 
 const comparisonStatusOrder: Record<ComparisonStatus, number> = {
@@ -29,6 +31,7 @@ export function sanitizeComparisonFileEntries(
     byShortcut.set(shortcut, {
       shortcut,
       phrase,
+      tags: normalizeTags(item.tags ?? []),
     });
   });
 
@@ -63,7 +66,9 @@ export function buildComparisonItems(
 
     let status: ComparisonStatus;
     if (currentEntry && fileEntry) {
-      status = currentEntry.phrase === fileEntry.phrase ? 'identical' : 'modified';
+      const phraseMatches = currentEntry.phrase === fileEntry.phrase;
+      const tagsMatch = areTagsEqual(currentEntry.tags ?? [], normalizeTags(fileEntry.tags ?? []));
+      status = phraseMatches && tagsMatch ? 'identical' : 'modified';
     } else if (fileEntry) {
       status = 'fileOnly';
     } else {

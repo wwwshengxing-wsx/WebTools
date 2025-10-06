@@ -22,9 +22,13 @@ export default function TextReplacementPage(): JSX.Element {
     historyEntries,
     importPreview,
     comparisonPreview,
+    availableTags,
+    selectedTags,
     setSearchTerm,
     setSortBy,
     toggleSortOrder,
+    toggleTagFilter,
+    clearTagFilters,
     saveEntry,
     deleteEntry,
     prepareImportPreview,
@@ -34,6 +38,7 @@ export default function TextReplacementPage(): JSX.Element {
     cancelImportPreview,
     undoHistory,
     exportEntriesAsXml,
+    clearAllEntries,
     prepareComparisonPreview,
     closeComparisonPreview,
     addComparisonEntry,
@@ -51,7 +56,7 @@ export default function TextReplacementPage(): JSX.Element {
   const [compareError, setCompareError] = useState('');
 
   const openNewEntryDialog = () => {
-    setDialogState({ isOpen: true, entry: null });
+        setDialogState({ isOpen: true, entry: null });
   };
 
   const openEditDialog = (entry: TextReplacementEntry) => {
@@ -62,7 +67,7 @@ export default function TextReplacementPage(): JSX.Element {
     setDialogState({ isOpen: false, entry: null });
   };
 
-  const handleDialogSave = (values: { shortcut: string; phrase: string }) => {
+  const handleDialogSave = (values: { shortcut: string; phrase: string; tags: string[] }) => {
     if (dialogState.entry) {
       saveEntry({ id: dialogState.entry.id, ...values });
     } else {
@@ -140,6 +145,12 @@ export default function TextReplacementPage(): JSX.Element {
     URL.revokeObjectURL(url);
   };
 
+  const handleClearAll = () => {
+    const confirmed = window.confirm('This will remove all entries and history. Continue?');
+    if (!confirmed) return;
+    clearAllEntries();
+  };
+
   return (
     <section className="flex w-full flex-col gap-8 px-4 pb-12">
       <header className="max-w-4xl space-y-3">
@@ -159,6 +170,8 @@ export default function TextReplacementPage(): JSX.Element {
         searchTerm={searchTerm}
         sortBy={sortBy}
         sortOrder={sortOrder}
+        availableTags={availableTags}
+        selectedTags={selectedTags}
         onSearchTermChange={setSearchTerm}
         onSortByChange={(value: SortBy) => setSortBy(value)}
         onSortOrderToggle={toggleSortOrder}
@@ -166,6 +179,9 @@ export default function TextReplacementPage(): JSX.Element {
         onCompareClick={handleCompareClick}
         onImportClick={handleImportClick}
         onExportClick={handleExport}
+        onTagToggle={toggleTagFilter}
+        onClearTagFilters={clearTagFilters}
+        onClearAll={handleClearAll}
       />
 
       <div className="space-y-3">
@@ -221,6 +237,8 @@ export default function TextReplacementPage(): JSX.Element {
         title={dialogState.entry ? 'Edit entry' : 'New entry'}
         initialShortcut={dialogState.entry?.shortcut ?? ''}
         initialPhrase={dialogState.entry?.phrase ?? ''}
+        initialTags={dialogState.entry?.tags ?? []}
+        availableTags={availableTags}
         onSave={handleDialogSave}
         onDismiss={closeDialog}
       />

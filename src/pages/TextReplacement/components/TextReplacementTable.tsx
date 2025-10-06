@@ -43,6 +43,9 @@ export default function TextReplacementTable(
               Phrase
             </th>
             <th scope="col" className="px-6 py-4 font-semibold">
+              Tags
+            </th>
+            <th scope="col" className="px-6 py-4 font-semibold">
               Updated
             </th>
             <th scope="col" className="px-6 py-4 text-right font-semibold">
@@ -60,6 +63,22 @@ export default function TextReplacementTable(
                 <span className="block max-w-xl truncate" title={entry.phrase}>
                   {entry.phrase || <span className="text-slate-500">(empty)</span>}
                 </span>
+              </td>
+              <td className="px-6 py-4 text-xs text-slate-300">
+                {entry.tags.length === 0 ? (
+                  <span className="text-slate-500">—</span>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {entry.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center rounded-full bg-violet-500/20 px-3 py-0.5 text-xs font-semibold text-violet-200"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </td>
               <td className="px-6 py-4 text-xs text-slate-400">
                 {formatDate(entry.updatedAt)}
