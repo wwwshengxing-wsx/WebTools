@@ -15,6 +15,7 @@ describe('main bootstrap', () => {
     await act(async () => {
       await Promise.resolve();
     });
-
+    const root = document.getElementById('root');
+    expect(root?.childElementCount ?? 0).toBeGreaterThan(0);
   });
 });

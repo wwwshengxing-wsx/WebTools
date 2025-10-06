@@ -8,6 +8,7 @@ interface TextReplacementToolbarProps {
   onSortByChange: (value: SortBy) => void;
   onSortOrderToggle: () => void;
   onAddClick: () => void;
+  onCompareClick: () => void;
   onImportClick: () => void;
   onExportClick: () => void;
 }
@@ -29,6 +30,7 @@ export default function TextReplacementToolbar(
     onSortByChange,
     onSortOrderToggle,
     onAddClick,
+    onCompareClick,
     onImportClick,
     onExportClick,
   } = props;
@@ -76,6 +78,13 @@ export default function TextReplacementToolbar(
           className="inline-flex items-center justify-center rounded-full bg-sky-400 px-5 py-2 text-sm font-semibold text-slate-900 shadow-sm transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-200"
         >
           New entry
+        </button>
+        <button
+          type="button"
+          onClick={onCompareClick}
+          className="inline-flex items-center justify-center rounded-full bg-violet-400 px-5 py-2 text-sm font-semibold text-violet-950 shadow-sm transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-200"
+        >
+          Compare
         </button>
         <button
           type="button"

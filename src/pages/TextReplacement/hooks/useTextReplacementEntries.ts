@@ -1,205 +1,45 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { serializeTextReplacementItems } from '../lib/xml';
+import type {
+  ComparisonPreviewState,
+  HistoryEntry,
+  ImportPreviewState,
+  SortBy,
+  SortOrder,
+  TextReplacementEntry,
+  UseTextReplacementEntriesResult,
+} from './useTextReplacementEntries/types';
 import {
-  type ParsedTextReplacementItem,
-  serializeTextReplacementItems,
-} from '../lib/xml';
+  persistEntries,
+  persistHistory,
+  readEntriesFromStorage,
+  readHistoryFromStorage,
+} from './useTextReplacementEntries/storage';
+import {
+  areEntryListsEqual,
+  cloneEntries,
+  generateId,
+} from './useTextReplacementEntries/utils';
+import { appendHistoryEntry, createHistoryEntry } from './useTextReplacementEntries/history';
+import {
+  refreshComparisonState,
+  createComparisonActions,
+} from './useTextReplacementEntries/comparisonActions';
+import { createImportPreviewActions } from './useTextReplacementEntries/importPreview';
+import type { ComparisonFileEntry } from './useTextReplacementEntries/comparison';
 
-const ENTRIES_STORAGE_KEY = 'app.textReplacement.entries';
-const HISTORY_STORAGE_KEY = 'app.textReplacement.history';
-const HISTORY_LIMIT = 50;
-
-function isClient(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-}
-
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return Math.random().toString(36).slice(2, 11);
-}
-
-function cloneEntries(entries: TextReplacementEntry[]): TextReplacementEntry[] {
-  return entries.map((entry) => ({ ...entry }));
-}
-
-function areEntryListsEqual(
-  first: TextReplacementEntry[],
-  second: TextReplacementEntry[]
-): boolean {
-  if (first.length !== second.length) return false;
-  for (let index = 0; index < first.length; index += 1) {
-    const a = first[index];
-    const b = second[index];
-    if (!b) return false;
-    if (
-      a.id !== b.id ||
-      a.shortcut !== b.shortcut ||
-      a.phrase !== b.phrase ||
-      a.createdAt !== b.createdAt ||
-      a.updatedAt !== b.updatedAt ||
-      a.source !== b.source
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export type SortBy = 'updatedAt' | 'shortcut' | 'phrase';
-export type SortOrder = 'asc' | 'desc';
-
-export type HistoryEventType = 'create' | 'update' | 'delete' | 'import' | 'undo';
-
-export interface TextReplacementEntry {
-  id: string;
-  shortcut: string;
-  phrase: string;
-  createdAt: string;
-  updatedAt: string;
-  source: 'manual' | 'import';
-}
-
-export interface HistoryEntry {
-  id: string;
-  type: HistoryEventType;
-  timestamp: string;
-  summary: string;
-  before: TextReplacementEntry[];
-  after: TextReplacementEntry[];
-}
-
-export interface ImportPreviewItem {
-  id: string;
-  shortcut: string;
-  phrase: string;
-  status: 'new' | 'update';
-  existingEntryId?: string;
-  selected: boolean;
-}
-
-export interface ImportPreviewState {
-  fileName: string;
-  items: ImportPreviewItem[];
-}
-
-export interface UseTextReplacementEntriesResult {
-  entries: TextReplacementEntry[];
-  visibleEntries: TextReplacementEntry[];
-  sortBy: SortBy;
-  sortOrder: SortOrder;
-  searchTerm: string;
-  historyEntries: HistoryEntry[];
-  importPreview: ImportPreviewState | null;
-  setSearchTerm: (value: string) => void;
-  setSortBy: (sortBy: SortBy) => void;
-  toggleSortOrder: () => void;
-  saveEntry: (input: { id?: string; shortcut: string; phrase: string }) => void;
-  deleteEntry: (id: string) => void;
-  prepareImportPreview: (items: ParsedTextReplacementItem[], fileName: string) => void;
-  toggleImportSelection: (id: string) => void;
-  selectAllImportItems: (selected: boolean) => void;
-  confirmImportSelection: () => void;
-  cancelImportPreview: () => void;
-  undoHistory: (historyEntryId: string) => void;
-  exportEntriesAsXml: () => string;
-}
-
-function readEntriesFromStorage(): TextReplacementEntry[] {
-  if (!isClient()) return [];
-
-  try {
-    const raw = window.localStorage.getItem(ENTRIES_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as TextReplacementEntry[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((item) => typeof item.id === 'string')
-      .map((item) => ({
-        ...item,
-        shortcut: item.shortcut ?? '',
-        phrase: item.phrase ?? '',
-      }));
-  } catch (error) {
-    console.warn('Failed to read text replacement entries', error);
-    return [];
-  }
-}
-
-function readHistoryFromStorage(): HistoryEntry[] {
-  if (!isClient()) return [];
-
-  try {
-    const raw = window.localStorage.getItem(HISTORY_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as HistoryEntry[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((item) => typeof item.id === 'string' && Array.isArray(item.before) && Array.isArray(item.after))
-      .slice(0, HISTORY_LIMIT)
-      .map((item) => ({
-        ...item,
-        before: item.before.map((entry) => ({ ...entry })),
-        after: item.after.map((entry) => ({ ...entry })),
-      }));
-  } catch (error) {
-    console.warn('Failed to read text replacement history', error);
-    return [];
-  }
-}
-
-function persistEntries(entries: TextReplacementEntry[]): void {
-  if (!isClient()) return;
-  try {
-    window.localStorage.setItem(ENTRIES_STORAGE_KEY, JSON.stringify(entries));
-  } catch (error) {
-    console.warn('Failed to persist text replacement entries', error);
-  }
-}
-
-function persistHistory(history: HistoryEntry[]): void {
-  if (!isClient()) return;
-  try {
-    window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-  } catch (error) {
-    console.warn('Failed to persist text replacement history', error);
-  }
-}
-
-function createHistoryEntry(
-  type: HistoryEventType,
-  summary: string,
-  before: TextReplacementEntry[],
-  after: TextReplacementEntry[]
-): HistoryEntry {
-  return {
-    id: generateId(),
-    type,
-    summary,
-    timestamp: new Date().toISOString(),
-    before: cloneEntries(before),
-    after: cloneEntries(after),
-  };
-}
-
-function sortEntries(
-  entries: TextReplacementEntry[],
-  sortBy: SortBy,
-  sortOrder: SortOrder
-): TextReplacementEntry[] {
-  const sorted = [...entries].sort((a, b) => {
-    if (sortBy === 'updatedAt') {
-      return a.updatedAt.localeCompare(b.updatedAt);
-    }
-
-    const first = a[sortBy] ?? '';
-    const second = b[sortBy] ?? '';
-    return first.localeCompare(second, undefined, { sensitivity: 'base' });
-  });
-
-  return sortOrder === 'desc' ? sorted.reverse() : sorted;
-}
+export type {
+  ComparisonItem,
+  ComparisonPreviewState,
+  ComparisonStatus,
+  HistoryEntry,
+  ImportPreviewItem,
+  ImportPreviewState,
+  SortBy,
+  SortOrder,
+  TextReplacementEntry,
+  UseTextReplacementEntriesResult,
+} from './useTextReplacementEntries/types';
 
 export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
   const [entries, setEntries] = useState<TextReplacementEntry[]>(() => readEntriesFromStorage());
@@ -208,9 +48,12 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [searchTerm, setSearchTerm] = useState('');
   const [importPreview, setImportPreview] = useState<ImportPreviewState | null>(null);
+  const [comparisonPreview, setComparisonPreview] = useState<ComparisonPreviewState | null>(null);
 
   const entriesRef = useRef(entries);
   const historyRef = useRef(historyEntries);
+  const comparisonFileEntriesRef = useRef<ComparisonFileEntry[]>([]);
+  const comparisonPreviewRef = useRef<ComparisonPreviewState | null>(null);
 
   useEffect(() => {
     entriesRef.current = entries;
@@ -227,6 +70,10 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
   useEffect(() => {
     persistHistory(historyEntries);
   }, [historyEntries]);
+
+  useEffect(() => {
+    comparisonPreviewRef.current = comparisonPreview;
+  }, [comparisonPreview]);
 
   const setSortBy = useCallback((nextSortBy: SortBy) => {
     setSortByState(nextSortBy);
@@ -246,16 +93,22 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
       );
     });
 
-    return sortEntries(filtered, sortBy, sortOrder);
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'updatedAt') {
+        return a.updatedAt.localeCompare(b.updatedAt);
+      }
+
+      const first = a[sortBy] ?? '';
+      const second = b[sortBy] ?? '';
+      return first.localeCompare(second, undefined, { sensitivity: 'base' });
+    });
+
+    return sortOrder === 'desc' ? sorted.reverse() : sorted;
   }, [entries, searchTerm, sortBy, sortOrder]);
 
   const appendHistory = useCallback(
     (record: HistoryEntry | null) => {
-      if (!record) return;
-      setHistoryEntries((prev) => {
-        const next = [record, ...prev];
-        return next.slice(0, HISTORY_LIMIT);
-      });
+      appendHistoryEntry(record, setHistoryEntries);
     },
     []
   );
@@ -370,140 +223,22 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     [appendHistory]
   );
 
-  const prepareImportPreview = useCallback(
-    (items: ParsedTextReplacementItem[], fileName: string) => {
-      if (!items.length) {
-        setImportPreview({ fileName, items: [] });
-        return;
-      }
-
-      const nextItems: ImportPreviewItem[] = [];
-      const existingByShortcut = new Map(
-        entriesRef.current.map((entry) => [entry.shortcut, entry])
-      );
-
-      items.forEach((item) => {
-        const shortcut = item.shortcut.trim();
-        const phrase = item.phrase.trim();
-        if (!shortcut && !phrase) return;
-
-        const existing = existingByShortcut.get(shortcut);
-        if (!existing) {
-          nextItems.push({
-            id: `new:${generateId()}`,
-            shortcut,
-            phrase,
-            status: 'new',
-            selected: true,
-          });
-          return;
-        }
-
-        if (existing.phrase !== phrase) {
-          nextItems.push({
-            id: `update:${existing.id}`,
-            shortcut,
-            phrase,
-            status: 'update',
-            existingEntryId: existing.id,
-            selected: true,
-          });
-        }
-      });
-
-      setImportPreview({
-        fileName,
-        items: nextItems,
-      });
-    },
-    []
+  const {
+    prepareImportPreview,
+    toggleImportSelection,
+    selectAllImportItems,
+    confirmImportSelection,
+    cancelImportPreview,
+  } = useMemo(
+    () =>
+      createImportPreviewActions({
+        entriesRef,
+        setEntries,
+        setImportPreview,
+        appendHistory,
+      }),
+    [appendHistory]
   );
-
-  const toggleImportSelection = useCallback((id: string) => {
-    setImportPreview((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        items: prev.items.map((item) =>
-          item.id === id ? { ...item, selected: !item.selected } : item
-        ),
-      };
-    });
-  }, []);
-
-  const selectAllImportItems = useCallback((selected: boolean) => {
-    setImportPreview((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        items: prev.items.map((item) => ({ ...item, selected })),
-      };
-    });
-  }, []);
-
-  const confirmImportSelection = useCallback(() => {
-    setImportPreview((prevPreview) => {
-      if (!prevPreview) return prevPreview;
-      const selectedItems = prevPreview.items.filter((item) => item.selected);
-      if (selectedItems.length === 0) {
-        return null;
-      }
-
-      const now = new Date().toISOString();
-
-      setEntries((prevEntries) => {
-        let nextEntries = [...prevEntries];
-        let changed = false;
-
-        selectedItems.forEach((item) => {
-          if (item.status === 'new') {
-            const newEntry: TextReplacementEntry = {
-              id: generateId(),
-              shortcut: item.shortcut,
-              phrase: item.phrase,
-              createdAt: now,
-              updatedAt: now,
-              source: 'import',
-            };
-            nextEntries = [newEntry, ...nextEntries];
-            changed = true;
-          } else if (item.status === 'update' && item.existingEntryId) {
-            nextEntries = nextEntries.map((entry) =>
-              entry.id === item.existingEntryId
-                ? {
-                    ...entry,
-                    phrase: item.phrase,
-                    updatedAt: now,
-                    source: entry.source === 'manual' ? 'manual' : 'import',
-                  }
-                : entry
-            );
-            changed = true;
-          }
-        });
-
-        if (!changed) {
-          return prevEntries;
-        }
-
-        const before = cloneEntries(prevEntries);
-        const history = createHistoryEntry(
-          'import',
-          `Imported ${selectedItems.length} entr${selectedItems.length === 1 ? 'y' : 'ies'} from ${prevPreview.fileName}`,
-          before,
-          nextEntries
-        );
-        appendHistory(history);
-        return nextEntries;
-      });
-
-      return null;
-    });
-  }, [appendHistory]);
-
-  const cancelImportPreview = useCallback(() => {
-    setImportPreview(null);
-  }, []);
 
   const undoHistory = useCallback(
     (historyEntryId: string) => {
@@ -525,11 +260,45 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     [appendHistory]
   );
 
+  const refreshComparisonPreview = useCallback(
+    (entriesSnapshot: TextReplacementEntry[]) => {
+      refreshComparisonState(
+        setComparisonPreview,
+        comparisonFileEntriesRef,
+        comparisonPreviewRef,
+        entriesSnapshot
+      );
+    },
+    []
+  );
+
+  const {
+    prepareComparisonPreview,
+    closeComparisonPreview,
+    addComparisonEntry,
+    applyComparisonEntry,
+    removeComparisonEntry,
+  } = useMemo(
+    () =>
+      createComparisonActions({
+        entriesRef,
+        setEntries,
+        setComparisonPreview,
+        comparisonFileEntriesRef,
+        comparisonPreviewRef,
+        refreshComparisonPreview,
+        appendHistory,
+      }),
+    [appendHistory, refreshComparisonPreview]
+  );
+
   const exportEntriesAsXml = useCallback(() => {
-    const items = sortEntries(entriesRef.current, 'shortcut', 'asc').map((entry) => ({
-      shortcut: entry.shortcut,
-      phrase: entry.phrase,
-    }));
+    const items = [...entriesRef.current]
+      .sort((a, b) => a.shortcut.localeCompare(b.shortcut, undefined, { sensitivity: 'base' }))
+      .map((entry) => ({
+        shortcut: entry.shortcut,
+        phrase: entry.phrase,
+      }));
     return serializeTextReplacementItems(items);
   }, []);
 
@@ -541,6 +310,7 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     searchTerm,
     historyEntries,
     importPreview,
+    comparisonPreview,
     setSearchTerm,
     setSortBy,
     toggleSortOrder,
@@ -553,5 +323,10 @@ export function useTextReplacementEntries(): UseTextReplacementEntriesResult {
     cancelImportPreview,
     undoHistory,
     exportEntriesAsXml,
+    prepareComparisonPreview,
+    closeComparisonPreview,
+    addComparisonEntry,
+    applyComparisonEntry,
+    removeComparisonEntry,
   };
 }

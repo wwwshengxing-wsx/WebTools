@@ -4,6 +4,7 @@ import TextReplacementTable from './components/TextReplacementTable';
 import EditDialog from './components/EditDialog';
 import ImportPreviewDrawer from './components/ImportPreviewDrawer';
 import HistoryPanel from './components/HistoryPanel';
+import ComparisonDrawer from './components/ComparisonDrawer';
 import { parseTextReplacementXml } from './lib/xml';
 import {
   useTextReplacementEntries,
@@ -20,6 +21,7 @@ export default function TextReplacementPage(): JSX.Element {
     searchTerm,
     historyEntries,
     importPreview,
+    comparisonPreview,
     setSearchTerm,
     setSortBy,
     toggleSortOrder,
@@ -32,14 +34,21 @@ export default function TextReplacementPage(): JSX.Element {
     cancelImportPreview,
     undoHistory,
     exportEntriesAsXml,
+    prepareComparisonPreview,
+    closeComparisonPreview,
+    addComparisonEntry,
+    applyComparisonEntry,
+    removeComparisonEntry,
   } = useTextReplacementEntries();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const compareInputRef = useRef<HTMLInputElement | null>(null);
   const [dialogState, setDialogState] = useState<{
     isOpen: boolean;
     entry: TextReplacementEntry | null;
   }>({ isOpen: false, entry: null });
   const [importError, setImportError] = useState('');
+  const [compareError, setCompareError] = useState('');
 
   const openNewEntryDialog = () => {
     setDialogState({ isOpen: true, entry: null });
@@ -67,6 +76,11 @@ export default function TextReplacementPage(): JSX.Element {
     fileInputRef.current?.click();
   };
 
+  const handleCompareClick = () => {
+    setCompareError('');
+    compareInputRef.current?.click();
+  };
+
   const handleFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const input = event.target;
@@ -88,6 +102,29 @@ export default function TextReplacementPage(): JSX.Element {
       })();
     },
     [prepareImportPreview]
+  );
+
+  const handleCompareFileChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const input = event.target;
+      const file = input.files?.[0];
+      if (!file) return;
+
+      void (async () => {
+        try {
+          const text = await file.text();
+          const parsed = parseTextReplacementXml(text);
+          prepareComparisonPreview(parsed, file.name);
+          setCompareError('');
+        } catch (error) {
+          console.warn('Failed to compare xml file', error);
+          setCompareError('Failed to parse XML file for comparison. Ensure it matches the expected plist format.');
+        } finally {
+          input.value = '';
+        }
+      })();
+    },
+    [prepareComparisonPreview]
   );
 
   const handleExport = () => {
@@ -126,15 +163,29 @@ export default function TextReplacementPage(): JSX.Element {
         onSortByChange={(value: SortBy) => setSortBy(value)}
         onSortOrderToggle={toggleSortOrder}
         onAddClick={openNewEntryDialog}
+        onCompareClick={handleCompareClick}
         onImportClick={handleImportClick}
         onExportClick={handleExport}
       />
 
-      {importError ? (
-        <p role="alert" className="rounded-2xl border border-rose-500/70 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          {importError}
-        </p>
-      ) : null}
+      <div className="space-y-3">
+        {importError ? (
+          <p
+            role="alert"
+            className="rounded-2xl border border-rose-500/70 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
+          >
+            {importError}
+          </p>
+        ) : null}
+        {compareError ? (
+          <p
+            role="alert"
+            className="rounded-2xl border border-amber-500/70 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+          >
+            {compareError}
+          </p>
+        ) : null}
+      </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 space-y-6">
@@ -156,6 +207,15 @@ export default function TextReplacementPage(): JSX.Element {
         onChange={handleFileChange}
       />
 
+      <input
+        ref={compareInputRef}
+        type="file"
+        accept=".xml"
+        className="hidden"
+        aria-label="Compare XML file"
+        onChange={handleCompareFileChange}
+      />
+
       <EditDialog
         isOpen={dialogState.isOpen}
         title={dialogState.entry ? 'Edit entry' : 'New entry'}
@@ -171,6 +231,14 @@ export default function TextReplacementPage(): JSX.Element {
         onToggleItem={toggleImportSelection}
         onSelectAll={selectAllImportItems}
         onConfirm={confirmImportSelection}
+      />
+
+      <ComparisonDrawer
+        comparison={comparisonPreview}
+        onClose={closeComparisonPreview}
+        onAdd={addComparisonEntry}
+        onApply={applyComparisonEntry}
+        onRemove={removeComparisonEntry}
       />
     </section>
   );

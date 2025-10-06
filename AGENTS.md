@@ -19,6 +19,7 @@
 - Apply 2-space indentation, single quotes, and trailing commas; run `npm run lint` followed by `npm run format` (Prettier) before pushing.
 - Name components and hooks in PascalCase (`CounterPanel.tsx`) and helper functions in camelCase (`formatDelta`).
 - Keep modules under 200 lines; extract shared pieces into `src/lib/` with focused exports.
+- In `src/pages/TextReplacement/hooks/`, ensure no single file exceeds 500 lines—split large hooks (for example `useTextReplacementEntries`) into smaller focused modules when needed.
 
 ## Testing Guidelines
 - Write unit tests with Vitest and React Testing Library; ensure every new component has render + interaction coverage.
