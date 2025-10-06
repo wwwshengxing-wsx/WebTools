@@ -3,6 +3,7 @@ import type {
   ComparisonPreviewState,
   ComparisonStatus,
 } from '../hooks/useTextReplacementEntries';
+import { useMemo, useState } from 'react';
 
 interface ComparisonDrawerProps {
   comparison: ComparisonPreviewState | null;
@@ -11,6 +12,8 @@ interface ComparisonDrawerProps {
   onApply: (shortcut: string) => void;
   onRemove: (shortcut: string) => void;
 }
+
+type StatusFilter = 'all' | ComparisonStatus;
 
 const statusStyles: Record<ComparisonStatus, { label: string; className: string }> = {
   modified: {
@@ -93,6 +96,37 @@ function ComparisonRowActions(props: {
 export default function ComparisonDrawer(props: ComparisonDrawerProps): JSX.Element | null {
   const { comparison, onClose, onAdd, onApply, onRemove } = props;
 
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [tagFilter, setTagFilter] = useState('');
+
+  const items = useMemo(() => comparison?.items ?? [], [comparison]);
+  const fileName = comparison?.fileName ?? '';
+  const differenceCount = comparison?.differenceCount ?? 0;
+
+  const uniqueTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    items.forEach((item) => {
+      (item.fileEntry?.tags ?? []).forEach((tag) => tagSet.add(tag));
+      (item.currentEntry?.tags ?? []).forEach((tag) => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    const lowerTag = tagFilter.trim().toLowerCase();
+    return items.filter((item) => {
+      if (item.status === 'identical') return false;
+      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+      if (!lowerTag) return true;
+      const fileTags = item.fileEntry?.tags ?? [];
+      const currentTags = item.currentEntry?.tags ?? [];
+      return (
+        fileTags.some((tag) => tag.toLowerCase().includes(lowerTag)) ||
+        currentTags.some((tag) => tag.toLowerCase().includes(lowerTag))
+      );
+    });
+  }, [items, statusFilter, tagFilter]);
+
   if (!comparison) return null;
 
   return (
@@ -100,11 +134,11 @@ export default function ComparisonDrawer(props: ComparisonDrawerProps): JSX.Elem
       <aside className="flex size-full max-w-5xl flex-col gap-6 border-l border-slate-700/70 bg-slate-900/95 px-6 py-8 shadow-2xl">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h3 className="text-2xl font-semibold text-slate-100">Compare with {comparison.fileName}</h3>
+            <h3 className="text-2xl font-semibold text-slate-100">Compare with {fileName}</h3>
             <p className="mt-1 text-sm text-slate-400">
-              {comparison.differenceCount === 0
+              {differenceCount === 0
                 ? 'No differences detected between the file and local entries.'
-                : `${comparison.differenceCount} difference${comparison.differenceCount === 1 ? '' : 's'} found.`}
+                : `${differenceCount} difference${differenceCount === 1 ? '' : 's'} found.`}
             </p>
           </div>
           <button
@@ -116,19 +150,58 @@ export default function ComparisonDrawer(props: ComparisonDrawerProps): JSX.Elem
           </button>
         </header>
 
-        {comparison.items.length === 0 ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-200">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Status
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                className="h-9 rounded-lg border border-slate-600 bg-slate-800/80 px-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+              >
+                <option value="all">All differences</option>
+                <option value="modified">Changed</option>
+                <option value="fileOnly">Only in file</option>
+                <option value="currentOnly">Only current</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Filter tags
+              <input
+                value={tagFilter}
+                onChange={(event) => setTagFilter(event.target.value)}
+                placeholder="Search tags"
+                className="h-9 rounded-lg border border-slate-600 bg-slate-800/80 px-3 text-sm text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+              />
+            </label>
+            {uniqueTags.length > 0 ? (
+              <div className="flex flex-wrap gap-2 text-xs text-slate-200">
+                {uniqueTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setTagFilter(tag)}
+                    className="rounded-full bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-200 transition-transform duration-150 hover:translate-y-[-2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {items.length === 0 ? (
           <div className="rounded-2xl border border-slate-700/70 bg-slate-950/50 p-6 text-sm text-slate-300">
             The selected file did not contain any entries.
           </div>
-        ) : comparison.differenceCount === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="rounded-2xl border border-slate-700/70 bg-slate-950/50 p-6 text-sm text-slate-300">
             No differences detected between the file and local entries.
           </div>
         ) : (
           <ul className="flex-1 space-y-4 overflow-y-auto pr-2">
-            {comparison.items
-              .filter((item) => item.status !== 'identical')
-              .map((item) => {
+            {filteredItems.map((item) => {
                 const status = statusStyles[item.status];
                 const filePhrase = item.fileEntry ? renderPhrase(item.fileEntry.phrase) : 'Not present in file';
                 const currentPhrase = item.currentEntry
