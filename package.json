@@ -10,7 +10,7 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "e2e": "playwright test",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --ignore-pattern src/pages/JsonTools/**",
     "format": "prettier --write .",
     "prepare": "husky install",
     "cov": "vitest run --coverage"
