@@ -120,14 +120,20 @@ export default function ComparisonDrawer(props: ComparisonDrawerProps): JSX.Elem
           <div className="rounded-2xl border border-slate-700/70 bg-slate-950/50 p-6 text-sm text-slate-300">
             The selected file did not contain any entries.
           </div>
+        ) : comparison.differenceCount === 0 ? (
+          <div className="rounded-2xl border border-slate-700/70 bg-slate-950/50 p-6 text-sm text-slate-300">
+            No differences detected between the file and local entries.
+          </div>
         ) : (
           <ul className="flex-1 space-y-4 overflow-y-auto pr-2">
-            {comparison.items.map((item) => {
-              const status = statusStyles[item.status];
-              const filePhrase = item.fileEntry ? renderPhrase(item.fileEntry.phrase) : 'Not present in file';
-              const currentPhrase = item.currentEntry
-                ? renderPhrase(item.currentEntry.phrase)
-                : 'Not present locally';
+            {comparison.items
+              .filter((item) => item.status !== 'identical')
+              .map((item) => {
+               const status = statusStyles[item.status];
+               const filePhrase = item.fileEntry ? renderPhrase(item.fileEntry.phrase) : 'Not present in file';
+               const currentPhrase = item.currentEntry
+                 ? renderPhrase(item.currentEntry.phrase)
+                 : 'Not present locally';
 
               return (
                 <li
@@ -159,7 +165,7 @@ export default function ComparisonDrawer(props: ComparisonDrawerProps): JSX.Elem
                   </div>
                 </li>
               );
-            })}
+              })}
           </ul>
         )}
       </aside>
